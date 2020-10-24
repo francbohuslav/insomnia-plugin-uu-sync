@@ -5,16 +5,16 @@ class Storage {
         this.context = context;
     }
 
-    async getPath() {
-        return await this.context.store.getItem(storeKey);
+    async getPath(workSpaceName) {
+        return await this.context.store.getItem(storeKey + "-" + workSpaceName);
     }
 
-    async setPath(path) {
-        return await this.context.store.setItem(storeKey, path);
+    async setPath(workSpaceName, path) {
+        return await this.context.store.setItem(storeKey + "-" + workSpaceName, path);
     }
 
-    async isConfigured() {
-        return await this.context.store.hasItem(storeKey);
+    async isConfigured(workSpaceName) {
+        return await this.context.store.hasItem(storeKey + "-" + workSpaceName);
     }
 }
 
