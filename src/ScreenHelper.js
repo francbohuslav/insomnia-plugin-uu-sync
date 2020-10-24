@@ -12,6 +12,19 @@ class ScreenHelper {
 
         return normalizePath(path);
     }
+
+    static async askLastWorkspace(context, lastWorkspace) {
+        try {
+            return await context.app.prompt("Workspace to import", {
+                label: "Specify name of workspace to import. Can be also some used but removed from Insomnia.",
+                defaultValue: lastWorkspace || "",
+                submitName: "Import",
+                cancelable: true,
+            });
+        } catch (error) {
+            return null;
+        }
+    }
 }
 
 const normalizePath = (path) => {

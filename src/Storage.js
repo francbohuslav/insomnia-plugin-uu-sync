@@ -1,4 +1,5 @@
-const storeKey = "insomnia-plugin-uu-sync-filepath";
+const filepathKey = "insomnia-plugin-uu-sync-filepath";
+const lastKey = "insomnia-plugin-uu-sync-last";
 
 class Storage {
     constructor(context) {
@@ -6,15 +7,23 @@ class Storage {
     }
 
     async getPath(workSpaceName) {
-        return await this.context.store.getItem(storeKey + "-" + workSpaceName);
+        return await this.context.store.getItem(filepathKey + "-" + workSpaceName);
     }
 
     async setPath(workSpaceName, path) {
-        return await this.context.store.setItem(storeKey + "-" + workSpaceName, path);
+        return await this.context.store.setItem(filepathKey + "-" + workSpaceName, path);
     }
 
     async isConfigured(workSpaceName) {
-        return await this.context.store.hasItem(storeKey + "-" + workSpaceName);
+        return await this.context.store.hasItem(filepathKey + "-" + workSpaceName);
+    }
+
+    async setLast(workSpaceName) {
+        return await this.context.store.setItem(lastKey, workSpaceName);
+    }
+
+    async getLast() {
+        return await this.context.store.getItem(lastKey);
     }
 }
 

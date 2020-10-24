@@ -18,7 +18,7 @@ const verifyConfig = async (storage, context, workspaceName) => {
 
 module.exports.workspaceActions = [
     {
-        label: "uuSync - Export Workspace",
+        label: "uuSync - Export workspace",
         icon: "fa-download",
         action: async (context, models) => {
             const storage = new Storage(context);
@@ -26,6 +26,7 @@ module.exports.workspaceActions = [
                 return;
             }
 
+            await storage.setLast(models.workspace.name);
             const path = await storage.getPath(models.workspace.name);
             const oneLineJson = await context.data.export.insomnia({
                 includePrivate: false,
@@ -38,14 +39,35 @@ module.exports.workspaceActions = [
         },
     },
     {
-        label: "uuSync - Import Workspace",
+        label: "uuSync - Import active",
         icon: "fa-upload",
         action: async (context, models) => {
             const storage = new Storage(context);
             if (!(await verifyConfig(storage, context, models.workspace.name))) {
                 return;
             }
+
+            await storage.setLast(models.workspace.name);
             const path = await storage.getPath(models.workspace.name);
+            const imported = fs.readFileSync(path, "utf8");
+
+            await context.data.import.raw(imported);
+        },
+    },
+    {
+        label: "uuSync - Import last (deleted)",
+        icon: "fa-upload",
+        action: async (context, models) => {
+            const storage = new Storage(context);
+            let lastWorkspace = await storage.getLast();
+            lastWorkspace = await ScreenHelper.askLastWorkspace(context, lastWorkspace);
+            if (!lastWorkspace) {
+                return;
+            }
+            if (!(await verifyConfig(storage, context, lastWorkspace))) {
+                return;
+            }
+            const path = await storage.getPath(lastWorkspace);
             const imported = fs.readFileSync(path, "utf8");
 
             await context.data.import.raw(imported);
