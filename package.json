@@ -1,0 +1,35 @@
+{
+  "name": "@francbohuslav/insomnia-plugin-uu-sync",
+  "version": "0.1.0",
+  "author": "Bogan <franc.bohuslav@gmail.com>",
+  "description": "Workspace to file sync plugin for Insomnia",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/francbohuslav/insomnia-plugin-uu-sync.git"
+  },
+  "keywords": [
+    "insomnia",
+    "plugin",
+    "git",
+    "uu"
+  ],
+  "bugs": {
+    "url": "https://github.com/francbohuslav/insomnia-plugin-uu-sync/issues"
+  },
+  "main": "src/index.js",
+  "insomnia": {
+    "name": "uu-sync",
+    "displayName": "uuSync Plugin",
+    "description": "This plugin allows users to easily import/export workspace to a configured file.",
+    "images": {
+      "icon": "icon.png"
+    },
+    "applications": {
+      "core": "*"
+    }
+  },
+  "dependencies": {},
+  "homepage": "https://github.com/francbohuslav/insomnia-plugin-uu-sync#readme",
+  "devDependencies": {}
+}
