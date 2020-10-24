@@ -1,6 +1,6 @@
 {
     "name": "insomnia-plugin-uu-sync",
-    "version": "0.1.0",
+    "version": "0.2.1",
     "author": "Bogan <franc.bohuslav@gmail.com>",
     "description": "Workspace to file sync plugin for Insomnia",
     "license": "MIT",
