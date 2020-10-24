@@ -9,7 +9,7 @@ const ScreenHelper = require("./ScreenHelper.js");
 const verifyRepoConfig = async (repo, context) => {
     if (await repo.isConfigured(context)) return true;
 
-    ScreenHelper.alertError(context, "Workspace not found!");
+    ScreenHelper.alertError(context, "Workspace not configured! Click on 'uuSync - Configure' first.");
     return false;
 };
 

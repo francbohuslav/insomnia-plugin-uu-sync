@@ -4,7 +4,10 @@ class ScreenHelper {
     }
 
     static async askRepoPath(context, options = {}) {
-        await context.app.alert("Choose insomnia-workspace", `Choose target file for import/export of workspace. Actual: ${options.currentPath}`);
+        await context.app.alert(
+            "Choose insomnia-workspace",
+            `Choose target file for import/export of workspace. Confirm rewrite if you choose existing file. Actual: ${options.currentPath}`
+        );
         const path = await context.app.showSaveDialog({ defaultPath: options.workspaceName });
 
         return normalizePath(path);
