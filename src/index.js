@@ -4,6 +4,7 @@ const ScreenHelper = require("./ScreenHelper.js");
 const FileNormalizer = require("./FileNormalizer.js");
 const normalizer = new FileNormalizer();
 
+const connectWithFileStr = "uuSync - Connect with file";
 /**
  *
  * @param {Storage} storage
@@ -12,13 +13,13 @@ const normalizer = new FileNormalizer();
 const verifyConfig = async (storage, context, workspaceName) => {
     if (await storage.isConfigured(workspaceName)) return true;
 
-    ScreenHelper.alertError(context, "Workspace not configured! Click on 'uuSync - Configure' first.");
+    ScreenHelper.alertError(context, `Workspace not configured! Click on '${connectWithFileStr}' first.`);
     return false;
 };
 
 module.exports.workspaceActions = [
     {
-        label: "uuSync - Export workspace",
+        label: "uuSync - Export",
         icon: "fa-download",
         action: async (context, models) => {
             const storage = new Storage(context);
@@ -39,18 +40,28 @@ module.exports.workspaceActions = [
         },
     },
     {
-        label: "uuSync - Import active",
+        label: "uuSync - Import",
         icon: "fa-upload",
         action: async (context, models) => {
             const storage = new Storage(context);
-            if (!(await verifyConfig(storage, context, models.workspace.name))) {
+            let path = null;
+            if (await verifyConfig(storage, context, models.workspace.name)) {
+                path = await storage.getPath(models.workspace.name);
+            } else {
+                path = await ScreenHelper.askNewWorkspaceFilePath(context);
+            }
+            if (!path) {
                 return;
             }
-
-            await storage.setLast(models.workspace.name);
-            const path = await storage.getPath(models.workspace.name);
             const imported = fs.readFileSync(path, "utf8");
-
+            json = JSON.parse(imported);
+            if (json.resources) {
+                const workSpace = json.resources.filter((r) => r._type == "workspace")[0];
+                if (workSpace) {
+                    await storage.setLast(workSpace.name);
+                    await storage.setPath(workSpace.name, path);
+                }
+            }
             await context.data.import.raw(imported);
         },
     },
@@ -74,12 +85,12 @@ module.exports.workspaceActions = [
         },
     },
     {
-        label: "uuSync - Configure",
+        label: connectWithFileStr,
         icon: "fa-cog",
         action: async (context, models) => {
             const storage = new Storage(context);
 
-            const filePath = await ScreenHelper.askFilePath(context, {
+            const filePath = await ScreenHelper.askExistingWorkspaceFilePath(context, {
                 currentPath: await storage.getPath(models.workspace.name),
                 workspaceName: models.workspace.name,
             });

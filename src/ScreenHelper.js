@@ -3,13 +3,19 @@ class ScreenHelper {
         return await context.app.alert("Error!", message);
     }
 
-    static async askFilePath(context, options = {}) {
+    static async askExistingWorkspaceFilePath(context, options = {}) {
         await context.app.alert(
-            "Choose insomnia-workspace",
-            `Choose target file for import/export of workspace. Confirm rewrite if you choose existing file. Actual: ${options.currentPath}`
+            "Choose Insomnia workspace file",
+            `Choose target file for import/export of current workspace. Confirm rewrite if you choose existing file. Actual: ${options.currentPath}`
         );
         const path = await context.app.showSaveDialog({ defaultPath: options.workspaceName });
 
+        return normalizePath(path);
+    }
+
+    static async askNewWorkspaceFilePath(context) {
+        await context.app.alert("Choose Insomnia workspace file", `Choose source file of new workspace. Confirm rewrite question.`);
+        const path = await context.app.showSaveDialog();
         return normalizePath(path);
     }
 
