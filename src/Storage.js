@@ -1,6 +1,6 @@
 const storeKey = "insomnia-plugin-uu-sync-filepath";
 
-class WorkspaceRepo {
+class Storage {
     constructor(context) {
         this.context = context;
     }
@@ -18,4 +18,4 @@ class WorkspaceRepo {
     }
 }
 
-module.exports = WorkspaceRepo;
+module.exports = Storage;

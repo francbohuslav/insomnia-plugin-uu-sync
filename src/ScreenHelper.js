@@ -3,7 +3,7 @@ class ScreenHelper {
         return await context.app.alert("Error!", message);
     }
 
-    static async askRepoPath(context, options = {}) {
+    static async askFilePath(context, options = {}) {
         await context.app.alert(
             "Choose insomnia-workspace",
             `Choose target file for import/export of workspace. Confirm rewrite if you choose existing file. Actual: ${options.currentPath}`

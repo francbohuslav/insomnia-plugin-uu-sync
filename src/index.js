@@ -1,13 +1,13 @@
 const fs = require("fs");
-const WorkspaceRepo = require("./WorkspaceRepo.js");
+const Storage = require("./Storage.js");
 const ScreenHelper = require("./ScreenHelper.js");
 /**
  *
- * @param {WorkspaceRepo} repo
+ * @param {Storage} storage
  * @param {*} context
  */
-const verifyRepoConfig = async (repo, context) => {
-    if (await repo.isConfigured(context)) return true;
+const verifyConfig = async (storage, context) => {
+    if (await storage.isConfigured(context)) return true;
 
     ScreenHelper.alertError(context, "Workspace not configured! Click on 'uuSync - Configure' first.");
     return false;
@@ -18,12 +18,12 @@ module.exports.workspaceActions = [
         label: "uuSync - Export Workspace",
         icon: "fa-download",
         action: async (context, models) => {
-            const repo = new WorkspaceRepo(context);
-            if (!(await verifyRepoConfig(repo, context))) {
+            const storage = new Storage(context);
+            if (!(await verifyConfig(storage, context))) {
                 return;
             }
 
-            const path = await repo.getPath();
+            const path = await storage.getPath();
             const oneLineJson = await context.data.export.insomnia({
                 includePrivate: false,
                 format: "json",
@@ -39,11 +39,11 @@ module.exports.workspaceActions = [
         label: "uuSync - Import Workspace",
         icon: "fa-upload",
         action: async (context, models) => {
-            const repo = new WorkspaceRepo(context);
-            if (!(await verifyRepoConfig(repo, context))) {
+            const storage = new Storage(context);
+            if (!(await verifyConfig(storage, context))) {
                 return;
             }
-            const path = await repo.getPath();
+            const path = await storage.getPath();
             const imported = fs.readFileSync(path, "utf8");
 
             await context.data.import.raw(imported);
@@ -53,15 +53,15 @@ module.exports.workspaceActions = [
         label: "uuSync - Configure",
         icon: "fa-cog",
         action: async (context, models) => {
-            const repo = new WorkspaceRepo(context);
+            const storage = new Storage(context);
 
-            const repoPath = await ScreenHelper.askRepoPath(context, {
-                currentPath: await repo.getPath(),
+            const filePath = await ScreenHelper.askFilePath(context, {
+                currentPath: await storage.getPath(),
                 workspaceName: models.workspace.name,
             });
-            if (repoPath == null) return;
+            if (filePath == null) return;
 
-            await repo.setPath(repoPath);
+            await storage.setPath(filePath);
         },
     },
 ];
