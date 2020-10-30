@@ -92,7 +92,7 @@ module.exports.workspaceActions = [
 
             const filePath = await ScreenHelper.askExistingWorkspaceFilePath(context, {
                 currentPath: await storage.getPath(models.workspace.name),
-                workspaceName: models.workspace.name,
+                workspaceName: "insomnia-workspace.json",
             });
             if (filePath == null) return;
 
