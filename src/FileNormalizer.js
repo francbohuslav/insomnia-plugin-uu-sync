@@ -1,12 +1,22 @@
 class FileNormalizer {
-    normalize(oneLineJson) {
+    normalizeExport(oneLineJson) {
         const content = JSON.parse(oneLineJson);
         content.__export_date = "2020-01-01T00:00:00.000Z";
         content.resources.forEach(this.setTimestamps);
         content.resources.sort(this.compareResources.bind(this));
+        this.getRequestsWithBody(content.resources).forEach(this.exportMultiLineRequests);
         this.setTimestamps(content);
         const formattedJson = JSON.stringify(content, null, 2);
         return formattedJson;
+    }
+
+    normalizeImport(content) {
+        this.getRequestsWithBody(content.resources).forEach(this.importMultiLineRequests);
+        return content;
+    }
+
+    getRequestsWithBody(resources) {
+        return resources.filter((resource) => resource._type == "request" && resource.body);
     }
 
     setTimestamps(resource) {
@@ -47,6 +57,18 @@ class FileNormalizer {
         }
         key += resource._id;
         return key;
+    }
+
+    exportMultiLineRequests(resource) {
+        if (resource.body.text) {
+            resource.body.__uuSyncText = resource.body.text.split("\n");
+        }
+    }
+
+    importMultiLineRequests(resource) {
+        if (resource.body.__uuSyncText) {
+            resource.body.text = resource.body.__uuSyncText.join("\n");
+        }
     }
 }
 

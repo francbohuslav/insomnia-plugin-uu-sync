@@ -35,7 +35,7 @@ module.exports.workspaceActions = [
                 workspace: models.workspace,
             });
 
-            const formattedJson = normalizer.normalize(oneLineJson);
+            const formattedJson = normalizer.normalizeExport(oneLineJson);
             fs.writeFileSync(path, formattedJson);
         },
     },
@@ -53,8 +53,8 @@ module.exports.workspaceActions = [
             if (!path) {
                 return;
             }
-            const imported = fs.readFileSync(path, "utf8");
-            json = JSON.parse(imported);
+            let imported = fs.readFileSync(path, "utf8");
+            let json = JSON.parse(imported);
             if (json.resources) {
                 const workSpace = json.resources.filter((r) => r._type == "workspace")[0];
                 if (workSpace) {
@@ -62,7 +62,8 @@ module.exports.workspaceActions = [
                     await storage.setPath(workSpace.name, path);
                 }
             }
-            await context.data.import.raw(imported);
+            json = normalizer.normalizeImport(json);
+            await context.data.import.raw(JSON.stringify(json));
         },
     },
     {
@@ -79,9 +80,10 @@ module.exports.workspaceActions = [
                 return;
             }
             const path = await storage.getPath(lastWorkspace);
-            const imported = fs.readFileSync(path, "utf8");
-
-            await context.data.import.raw(imported);
+            let imported = fs.readFileSync(path, "utf8");
+            let json = JSON.parse(imported);
+            json = normalizer.normalizeImport(json);
+            await context.data.import.raw(JSON.stringify(json));
         },
     },
     {
@@ -89,13 +91,13 @@ module.exports.workspaceActions = [
         icon: "fa-cog",
         action: async (context, models) => {
             const storage = new Storage(context);
-
             const filePath = await ScreenHelper.askExistingWorkspaceFilePath(context, {
                 currentPath: await storage.getPath(models.workspace.name),
                 workspaceName: "insomnia-workspace.json",
             });
-            if (filePath == null) return;
-
+            if (filePath == null) {
+                return;
+            }
             await storage.setPath(models.workspace.name, filePath);
         },
     },
