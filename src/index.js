@@ -1,7 +1,7 @@
 const fs = require("fs");
-const Storage = require("./Storage.js");
-const ScreenHelper = require("./ScreenHelper.js");
-const FileNormalizer = require("./FileNormalizer.js");
+const Storage = require("./storage.js");
+const ScreenHelper = require("./screen-helper.js");
+const FileNormalizer = require("./file-normalizer.js");
 const normalizer = new FileNormalizer();
 
 const connectWithFileStr = "uuSync - Connect with file";
