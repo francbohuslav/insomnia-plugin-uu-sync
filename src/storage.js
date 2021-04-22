@@ -6,6 +6,11 @@ class Storage {
         this.context = context;
     }
 
+    /**
+     *
+     * @param {string} workSpaceName
+     * @returns {Promise<string>}
+     */
     async getPath(workSpaceName) {
         return await this.context.store.getItem(filepathKey + "-" + workSpaceName);
     }

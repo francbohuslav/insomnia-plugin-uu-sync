@@ -2,6 +2,7 @@ const fs = require("fs");
 const Storage = require("./storage.js");
 const ScreenHelper = require("./screen-helper.js");
 const FileNormalizer = require("./file-normalizer.js");
+const WorkspaceSaver = require("./workspace-saver.js");
 const normalizer = new FileNormalizer();
 
 const connectWithFileStr = "uuSync - Connect with file";
@@ -35,8 +36,10 @@ module.exports.workspaceActions = [
                 workspace: models.workspace,
             });
 
-            const formattedJson = normalizer.normalizeExport(oneLineJson);
-            fs.writeFileSync(path, formattedJson);
+            const jsonObject = normalizer.normalizeExport(oneLineJson);
+            const workspaceSaver = new WorkspaceSaver(path);
+            await workspaceSaver.exportOneFile(jsonObject);
+            await workspaceSaver.exportMultipleFiles(jsonObject);
         },
     },
     {
