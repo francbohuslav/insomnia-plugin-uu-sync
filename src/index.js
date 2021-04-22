@@ -56,8 +56,9 @@ module.exports.workspaceActions = [
             if (!path) {
                 return;
             }
-            let imported = fs.readFileSync(path, "utf8");
-            let json = JSON.parse(imported);
+
+            const workspaceSaver = new WorkspaceSaver(path);
+            let json = await workspaceSaver.importMultipleFiles();
             if (json.resources) {
                 const workSpace = json.resources.filter((r) => r._type == "workspace")[0];
                 if (workSpace) {
@@ -65,7 +66,6 @@ module.exports.workspaceActions = [
                     await storage.setPath(workSpace.name, path);
                 }
             }
-            json = normalizer.normalizeImport(json);
             await context.data.import.raw(JSON.stringify(json));
         },
     },
@@ -83,9 +83,8 @@ module.exports.workspaceActions = [
                 return;
             }
             const path = await storage.getPath(lastWorkspace);
-            let imported = fs.readFileSync(path, "utf8");
-            let json = JSON.parse(imported);
-            json = normalizer.normalizeImport(json);
+            const workspaceSaver = new WorkspaceSaver(path);
+            let json = await workspaceSaver.importMultipleFiles();
             await context.data.import.raw(JSON.stringify(json));
         },
     },

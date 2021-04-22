@@ -66,6 +66,7 @@ class FileNormalizer {
     importMultiLineRequests(resource) {
         if (resource.body.__uuSyncText) {
             resource.body.text = resource.body.__uuSyncText.join("\n");
+            delete resource.body.__uuSyncText;
         }
     }
 }
