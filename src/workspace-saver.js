@@ -12,6 +12,7 @@ const normalizer = new FileNormalizer();
 /**
  * @typedef {Object} IResource
  * @property {string} _id
+ * @property {string} name
  */
 
 /**
@@ -49,7 +50,7 @@ class WorkspaceSaver {
             const fullFilePath = path.join(this.folderPath, fileName);
             await unlink(fullFilePath);
         }
-        jsonObject.resources = jsonObject.resources.map((resource) => resource._id);
+        jsonObject.resources = jsonObject.resources.map(this.getResourceIdWithName);
         const formattedJson = JSON.stringify(jsonObject, null, 2);
         writeFile(this.workspaceFile, formattedJson);
     }
@@ -69,7 +70,8 @@ class WorkspaceSaver {
             const jsonObject = JSON.parse(formattedJson);
             const resourcesIds = [...jsonObject.resources];
             jsonObject.resources = [];
-            for (const resourceId of resourcesIds) {
+            for (const resourceIdWithName of resourcesIds) {
+                const resourceId = this.getResourceIdFromIdWithName(resourceIdWithName);
                 jsonObject.resources.push(await this.loadResource(resourceId));
             }
             return jsonObject;
@@ -80,6 +82,23 @@ class WorkspaceSaver {
         const files = await readdir(this.folderPath);
         return files.filter((file) => file != "_workspace.json");
     }
+
+    /**
+     *
+     * @param {IResource} resource
+     */
+    getResourceIdWithName(resource) {
+        return resource._id + " | " + resource.name;
+    }
+
+    /**
+     *
+     * @param {IResource} resource
+     */
+    getResourceIdFromIdWithName(resourceIdWithName) {
+        return resourceIdWithName.split("|")[0].trim();
+    }
+
     /**
      *
      * @param {IResource} resource
