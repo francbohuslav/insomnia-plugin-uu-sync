@@ -1,35 +1,28 @@
+import { IInsomniaContext } from "./insomnia";
+
 const filepathKey = "insomnia-plugin-uu-sync-filepath";
 const lastKey = "insomnia-plugin-uu-sync-last";
 
-class Storage {
-    constructor(context) {
-        this.context = context;
-    }
+export default class Storage {
+    constructor(private context: IInsomniaContext) {}
 
-    /**
-     *
-     * @param {string} workSpaceName
-     * @returns {Promise<string>}
-     */
-    async getPath(workSpaceName) {
+    public async getPath(workSpaceName: string): Promise<string> {
         return await this.context.store.getItem(filepathKey + "-" + workSpaceName);
     }
 
-    async setPath(workSpaceName, path) {
+    public async setPath(workSpaceName: string, path: string) {
         return await this.context.store.setItem(filepathKey + "-" + workSpaceName, path);
     }
 
-    async isConfigured(workSpaceName) {
+    public async isConfigured(workSpaceName: string) {
         return await this.context.store.hasItem(filepathKey + "-" + workSpaceName);
     }
 
-    async setLast(workSpaceName) {
+    public async setLast(workSpaceName: string) {
         return await this.context.store.setItem(lastKey, workSpaceName);
     }
 
-    async getLast() {
+    public async getLast() {
         return await this.context.store.getItem(lastKey);
     }
 }
-
-module.exports = Storage;

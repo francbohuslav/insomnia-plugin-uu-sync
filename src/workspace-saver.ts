@@ -1,3 +1,6 @@
+import FileNormalizer from "./file-normalizer";
+import { IInsomniaFile, IInsomniaFileResource } from "./insomnia";
+
 const fs = require("fs");
 const path = require("path");
 const promisify = require("util").promisify;
@@ -6,39 +9,22 @@ const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
 const readdir = promisify(fs.readdir);
 const unlink = promisify(fs.unlink);
-const FileNormalizer = require("./file-normalizer.js");
-const normalizer = new FileNormalizer();
 
-/**
- * @typedef {Object} IResource
- * @property {string} _id
- * @property {string} name
- */
+export default class WorkspaceSaver {
+    private folderPath: string;
+    private workspaceFile: string;
 
-/**
- * @typedef {Object} IWorkspace
- * @property {IResource[]} resources
- */
-
-class WorkspaceSaver {
-    constructor(insomniaFilePath) {
-        this.insomniaFilePath = insomniaFilePath;
+    constructor(private insomniaFilePath: string) {
         this.folderPath = insomniaFilePath + "-resources";
         this.workspaceFile = path.join(this.folderPath, "_workspace.json");
     }
 
-    async exportOneFile(jsonObject) {
+    public async exportOneFile(jsonObject: IInsomniaFile): Promise<void> {
         const formattedJson = JSON.stringify(jsonObject, null, 2);
         await writeFile(this.insomniaFilePath, formattedJson);
     }
 
-    /**
-     *
-     * @param {string} insomniaFilePath
-     * @param {IWorkspace} jsonObject
-     * @returns {Promise<void>}
-     */
-    async exportMultipleFiles(jsonObject) {
+    public async exportMultipleFiles(jsonObject: IInsomniaFile): Promise<void> {
         jsonObject = JSON.parse(JSON.stringify(jsonObject));
         await mkdir(this.folderPath, { recursive: true });
         const resourcesOnDisk = await this.getResourcesFiles();
@@ -50,82 +36,60 @@ class WorkspaceSaver {
             const fullFilePath = path.join(this.folderPath, fileName);
             await unlink(fullFilePath);
         }
-        jsonObject.resources = jsonObject.resources.map(this.getResourceIdWithName);
+        jsonObject.resources = jsonObject.resources.map(this.getResourceIdWithName) as any;
         const formattedJson = JSON.stringify(jsonObject, null, 2);
-        writeFile(this.workspaceFile, formattedJson);
+        await writeFile(this.workspaceFile, formattedJson);
     }
 
-    /**
-     *
-     * @returns
-     */
-    async importMultipleFiles() {
+    public async importMultipleFiles(): Promise<IInsomniaFile> {
         if (!fs.existsSync(this.workspaceFile)) {
             const formattedJson = await readFile(this.insomniaFilePath, "utf8");
-            let jsonObject = JSON.parse(formattedJson);
+            let jsonObject: IInsomniaFile = JSON.parse(formattedJson);
+            const normalizer = new FileNormalizer();
             jsonObject = normalizer.normalizeImport(jsonObject);
             return jsonObject;
         } else {
             const formattedJson = await readFile(this.workspaceFile, "utf8");
-            const jsonObject = JSON.parse(formattedJson);
-            const resourcesIds = [...jsonObject.resources];
+            const jsonObject: IInsomniaFile = JSON.parse(formattedJson);
+            const resourcesIds: string[] = [...jsonObject.resources] as any;
             jsonObject.resources = [];
             for (const resourceIdWithName of resourcesIds) {
-                const resourceId = this.getResourceIdFromIdWithName(resourceIdWithName);
+                const resourceId = this.getResourceIdFromIdWithName(resourceIdWithName as string);
                 jsonObject.resources.push(await this.loadResource(resourceId));
             }
             return jsonObject;
         }
     }
 
-    async getResourcesFiles() {
-        const files = await readdir(this.folderPath);
+    private async getResourcesFiles(): Promise<string[]> {
+        const files: string[] = await readdir(this.folderPath);
         return files.filter((file) => file != "_workspace.json");
     }
 
-    /**
-     *
-     * @param {IResource} resource
-     */
-    getResourceIdWithName(resource) {
+    private getResourceIdWithName(resource: IInsomniaFileResource): string {
         return resource._id + " | " + resource.name;
     }
 
-    /**
-     *
-     * @param {IResource} resource
-     */
-    getResourceIdFromIdWithName(resourceIdWithName) {
+    private getResourceIdFromIdWithName(resourceIdWithName: string): string {
         return resourceIdWithName.split("|")[0].trim();
     }
 
-    /**
-     *
-     * @param {IResource} resource
-     */
-    async saveResource(resource) {
+    private async saveResource(resource: IInsomniaFileResource): Promise<void> {
         const fullFilePath = path.join(this.folderPath, resource._id + ".json");
         if (resource._type == "request" && resource.body && resource.body.text) {
-            resource.body.text = resource.body.text.split("\n");
+            resource.body.text = resource.body.text.split("\n") as any;
         }
         const formattedJson = JSON.stringify(resource, null, 2);
         await writeFile(fullFilePath, formattedJson);
     }
 
-    /**
-     *
-     * @param {string} resourceId
-     * @returns {Promise<IResource>}
-     */
-    async loadResource(resourceId) {
+    private async loadResource(resourceId: string): Promise<IInsomniaFileResource> {
         const fullFilePath = path.join(this.folderPath, resourceId + ".json");
         const formattedJson = await readFile(fullFilePath);
-        const resource = JSON.parse(formattedJson);
+        const resource: IInsomniaFileResource = JSON.parse(formattedJson);
         if (resource._type == "request" && resource.body && resource.body.text) {
-            resource.body.text = resource.body.text.join("\n");
+            resource.body.text = (resource.body.text as any).join("\n");
         }
         return resource;
     }
 }
-
-module.exports = WorkspaceSaver;
