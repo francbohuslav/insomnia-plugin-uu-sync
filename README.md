@@ -1,6 +1,6 @@
 # Insomnia uuSync Plugin
 
-This plugin can import/export actual workspace to/from chosen file. File is formatted and splitted to files for every request to be versioned be GIT. These files are less prone to collisions.
+This plugin can import/export actual workspace to/from chosen file. File is formatted and splitted to files for every request to be versioned by GIT. These files are less prone to collisions.
 
 Compatible insomnia-workspace.json is also generated to be used with Insomnia without uuSync plugin.
 
