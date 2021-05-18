@@ -1,3 +1,4 @@
+import { AppError } from "./app-error";
 import FileNormalizer from "./file-normalizer";
 import { IInsomniaFile, IInsomniaFileResource } from "./insomnia";
 
@@ -25,39 +26,51 @@ export default class WorkspaceSaver {
     }
 
     public async exportMultipleFiles(jsonObject: IInsomniaFile): Promise<void> {
-        jsonObject = JSON.parse(JSON.stringify(jsonObject));
-        await mkdir(this.folderPath, { recursive: true });
-        const resourcesOnDisk = await this.getResourcesFiles();
-        const filesToRemove = resourcesOnDisk.filter((fileName) => jsonObject.resources.filter((r) => r._id + ".json" == fileName).length == 0);
-        for (let resource of jsonObject.resources) {
-            await this.saveResource(resource);
+        try {
+            jsonObject = JSON.parse(JSON.stringify(jsonObject));
+            await mkdir(this.folderPath, { recursive: true });
+            const resourcesOnDisk = await this.getResourcesFiles();
+            const filesToRemove = resourcesOnDisk.filter((fileName) => jsonObject.resources.filter((r) => r._id + ".json" == fileName).length == 0);
+            for (let resource of jsonObject.resources) {
+                await this.saveResource(resource);
+            }
+            for (let fileName of filesToRemove) {
+                const fullFilePath = path.join(this.folderPath, fileName);
+                await unlink(fullFilePath);
+            }
+            jsonObject.resources = jsonObject.resources.map(this.getResourceIdWithName) as any;
+            const formattedJson = JSON.stringify(jsonObject, null, 2);
+            await writeFile(this.workspaceFile, formattedJson);
+        } catch (err) {
+            throw new AppError(`Error during saving of file ${this.workspaceFile}\n${err}`, err);
         }
-        for (let fileName of filesToRemove) {
-            const fullFilePath = path.join(this.folderPath, fileName);
-            await unlink(fullFilePath);
-        }
-        jsonObject.resources = jsonObject.resources.map(this.getResourceIdWithName) as any;
-        const formattedJson = JSON.stringify(jsonObject, null, 2);
-        await writeFile(this.workspaceFile, formattedJson);
     }
 
     public async importMultipleFiles(): Promise<IInsomniaFile> {
         if (!fs.existsSync(this.workspaceFile)) {
-            const formattedJson = await readFile(this.insomniaFilePath, "utf8");
-            let jsonObject: IInsomniaFile = JSON.parse(formattedJson);
-            const normalizer = new FileNormalizer();
-            jsonObject = normalizer.normalizeImport(jsonObject);
-            return jsonObject;
-        } else {
-            const formattedJson = await readFile(this.workspaceFile, "utf8");
-            const jsonObject: IInsomniaFile = JSON.parse(formattedJson);
-            const resourcesIds: string[] = [...jsonObject.resources] as any;
-            jsonObject.resources = [];
-            for (const resourceIdWithName of resourcesIds) {
-                const resourceId = this.getResourceIdFromIdWithName(resourceIdWithName as string);
-                jsonObject.resources.push(await this.loadResource(resourceId));
+            try {
+                const formattedJson = await readFile(this.insomniaFilePath, "utf8");
+                let jsonObject: IInsomniaFile = JSON.parse(formattedJson);
+                const normalizer = new FileNormalizer();
+                jsonObject = normalizer.normalizeImport(jsonObject);
+                return jsonObject;
+            } catch (err) {
+                throw new AppError(`Error during loading of file ${this.insomniaFilePath}\n${err}`, err);
             }
-            return jsonObject;
+        } else {
+            try {
+                const formattedJson = await readFile(this.workspaceFile, "utf8");
+                const jsonObject: IInsomniaFile = JSON.parse(formattedJson);
+                const resourcesIds: string[] = [...jsonObject.resources] as any;
+                jsonObject.resources = [];
+                for (const resourceIdWithName of resourcesIds) {
+                    const resourceId = this.getResourceIdFromIdWithName(resourceIdWithName as string);
+                    jsonObject.resources.push(await this.loadResource(resourceId));
+                }
+                return jsonObject;
+            } catch (err) {
+                throw new AppError(`Error during loading of file ${this.workspaceFile}\n${err}`, err);
+            }
         }
     }
 
@@ -76,20 +89,28 @@ export default class WorkspaceSaver {
 
     private async saveResource(resource: IInsomniaFileResource): Promise<void> {
         const fullFilePath = path.join(this.folderPath, resource._id + ".json");
-        if (resource._type == "request" && resource.body && resource.body.text) {
-            resource.body.text = resource.body.text.split("\n") as any;
+        try {
+            if (resource._type == "request" && resource.body && resource.body.text) {
+                resource.body.text = resource.body.text.split("\n") as any;
+            }
+            const formattedJson = JSON.stringify(resource, null, 2);
+            await writeFile(fullFilePath, formattedJson);
+        } catch (err) {
+            throw new AppError(`Error during saving of file ${fullFilePath}\n${err}`, err);
         }
-        const formattedJson = JSON.stringify(resource, null, 2);
-        await writeFile(fullFilePath, formattedJson);
     }
 
     private async loadResource(resourceId: string): Promise<IInsomniaFileResource> {
         const fullFilePath = path.join(this.folderPath, resourceId + ".json");
-        const formattedJson = await readFile(fullFilePath);
-        const resource: IInsomniaFileResource = JSON.parse(formattedJson);
-        if (resource._type == "request" && resource.body && resource.body.text) {
-            resource.body.text = (resource.body.text as any).join("\n");
+        try {
+            const formattedJson = await readFile(fullFilePath);
+            const resource: IInsomniaFileResource = JSON.parse(formattedJson);
+            if (resource._type == "request" && resource.body && resource.body.text) {
+                resource.body.text = (resource.body.text as any).join("\n");
+            }
+            return resource;
+        } catch (err) {
+            throw new AppError(`Error during loading of file ${fullFilePath}\n${err}`, err);
         }
-        return resource;
     }
 }
