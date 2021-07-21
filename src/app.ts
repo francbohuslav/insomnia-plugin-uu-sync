@@ -75,6 +75,7 @@ export default class App {
             return;
         }
         await storage.setPath(models.workspace.name, filePath);
+        await storage.setLast(models.workspace.name);
     }
 
     public getLabelString(): string {

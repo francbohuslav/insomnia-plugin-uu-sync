@@ -90,6 +90,7 @@ class App {
                 return;
             }
             yield storage.setPath(models.workspace.name, filePath);
+            yield storage.setLast(models.workspace.name);
         });
     }
     getLabelString() {
