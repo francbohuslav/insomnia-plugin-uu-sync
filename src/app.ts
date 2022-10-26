@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import os from "os";
 import { join } from "path";
 import { JsonToTable } from "./json-to-table";
+import { ImportManager } from "./import-manager";
 
 export default class App {
   lastResponseJsonBody: any;
@@ -71,6 +72,18 @@ export default class App {
     await context.data.import.raw(JSON.stringify(json));
   }
 
+  public showImportManager(context: IInsomniaContext, models: IInsomniaModels) {
+    context.app.dialog("Import manager", new ImportManager().getManagerDom(), {
+      wide: true,
+      tall: true,
+      skinny: false,
+      // onHide: () => {
+      //   console.log("ishiding");
+      // },
+    });
+  }
+
+  //TODO: BF: zrusit
   public async connectWithFile(context: IInsomniaContext, models: IInsomniaModels) {
     const storage = new InsomniaStorage(context);
     const filePath = await ScreenHelper.askExistingWorkspaceFilePath(context, {

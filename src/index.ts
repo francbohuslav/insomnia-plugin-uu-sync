@@ -14,14 +14,9 @@ module.exports.workspaceActions = [
     action: app.import.bind(app),
   },
   {
-    label: "uuSync - Import last (deleted)",
-    icon: "fa-upload",
-    action: app.importLast.bind(app),
-  },
-  {
-    label: app.getConnectionFileLabelString(),
-    icon: "fa-cog",
-    action: app.connectWithFile.bind(app),
+    label: "uuSync - Import manager",
+    icon: "fa-list",
+    action: app.showImportManager.bind(app),
   },
   {
     label: "Show response as table",

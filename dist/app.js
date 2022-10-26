@@ -19,6 +19,7 @@ const storage_1 = __importDefault(require("./storage"));
 const os_1 = __importDefault(require("os"));
 const path_1 = require("path");
 const json_to_table_1 = require("./json-to-table");
+const import_manager_1 = require("./import-manager");
 class App {
     export(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -82,6 +83,17 @@ class App {
             yield context.data.import.raw(JSON.stringify(json));
         });
     }
+    showImportManager(context, models) {
+        context.app.dialog("Import manager", new import_manager_1.ImportManager().getManagerDom(), {
+            wide: true,
+            tall: true,
+            skinny: false,
+            // onHide: () => {
+            //   console.log("ishiding");
+            // },
+        });
+    }
+    //TODO: BF: zrusit
     connectWithFile(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
             const storage = new storage_1.default(context);
