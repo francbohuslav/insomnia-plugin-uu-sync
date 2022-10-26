@@ -98,22 +98,40 @@ class App {
     }
     showDataAsTable(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(context);
-            // const div = document.createElement("div");
-            // div.innerHTML = "nejaky content <b>tucny</b>";
-            // context.app.dialog("Hele, co jde", div, {
-            //   wide: true,
-            //   tall: true,
-            //   skinny: true,
-            //   onHide: () => {
-            //     console.log("ishiding");
-            //   },
-            // });
-            if (this.lastResponseJsonBody) {
-                const filePath = path_1.join(os_1.default.tmpdir(), "insomnia-response-table.html");
-                var jsonToTable = new json_to_table_1.JsonToTable();
-                yield jsonToTable.saveToFile(filePath, this.lastResponseJsonBody);
+            if (!this.lastResponseJsonBody) {
+                this.lastResponseJsonBody = {
+                    itemList: [
+                        {
+                            Message: "run some request with response.itemList first",
+                        },
+                    ],
+                };
             }
+            var jsonToTable = new json_to_table_1.JsonToTable();
+            const whole = document.createElement("div");
+            whole.style.padding = "10px";
+            const link = document.createElement("button");
+            link.classList.add("tag");
+            link.classList.add("bg-info");
+            link.style.marginBottom = "0.5em";
+            link.innerText = "Save to file";
+            link.addEventListener("click", () => __awaiter(this, void 0, void 0, function* () {
+                const filePath = path_1.join(os_1.default.tmpdir(), "insomnia-response-table.html");
+                yield jsonToTable.saveToFile(filePath, html);
+            }));
+            whole.appendChild(link);
+            const table = document.createElement("div");
+            const html = jsonToTable.getTableHtml(this.lastResponseJsonBody);
+            table.innerHTML = html;
+            whole.appendChild(table);
+            context.app.dialog("Response as table", whole, {
+                wide: true,
+                tall: true,
+                skinny: false,
+                // onHide: () => {
+                //   console.log("ishiding");
+                // },
+            });
         });
     }
     processResponse(context, models) {

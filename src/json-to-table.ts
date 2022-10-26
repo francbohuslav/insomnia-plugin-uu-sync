@@ -1,12 +1,12 @@
 import { writeFile } from "fs/promises";
 
 export class JsonToTable {
-  public async saveToFile(filePath: string, json: any): Promise<void> {
+  public getTableHtml(json: any): string {
     const content = [
       `<style>
-        body {
-          overflow-x: scroll; 
+        .jsonToTable {
           font-family: monospace;
+          user-select: text;
         } 
         pre { 
           margin:0; 
@@ -16,10 +16,11 @@ export class JsonToTable {
         } 
         pre:hover {
          height: auto; 
+         max-height: 600px;
          left:10px; 
          right:10px; 
          width:auto; 
-         position: fixed; 
+         position: absolute; 
          background: white; 
          border: 1px solid; 
          box-shadow: 0 0 11px; 
@@ -27,18 +28,30 @@ export class JsonToTable {
          margin-top:-1em; 
          overflow:auto;
         }
-        table {
+        .jsonToTable table {
           border-collapse: collapse;
+          margin-bottom: 600px;
         }
-        th { 
+        .jsonToTable table th { 
           background: #9fffff;
+          font-family: monospace;
+          font-size: 13px;
+          text-transform: none;
+          color: black;
+          padding: 3px 6px;
+          border: 1px solid gray;
         }
-        td {
+        .jsonToTable table td {
           white-space: nowrap;
+          font-family: monospace;
+          font-size: 13px;
+          padding: 3px 6px;
+          border: 1px solid gray;
         }
         </style>`,
+      "<div class='jsonToTable'>",
     ];
-    content.push("<table border=1 cellspacing=0 cellpadding=4>");
+    content.push("<table>");
     const items = json.itemList || [];
     if (items.length) {
       const keys = Object.keys(items[0]);
@@ -59,8 +72,12 @@ export class JsonToTable {
         );
       });
     }
-    content.push("</table>");
-    await writeFile(filePath, content.join("\n"), { encoding: "utf-8" });
+    content.push("</table></div>");
+    return content.join("\n");
+  }
+
+  public async saveToFile(filePath: string, content: string): Promise<void> {
+    await writeFile(filePath, content, { encoding: "utf-8" });
     var url = filePath;
     var start = process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open";
     require("child_process").exec(start + " " + url);
