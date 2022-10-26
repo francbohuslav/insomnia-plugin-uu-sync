@@ -16,6 +16,9 @@ const file_normalizer_1 = __importDefault(require("./file-normalizer"));
 const screen_helper_1 = __importDefault(require("./screen-helper"));
 const workspace_saver_1 = __importDefault(require("./workspace-saver"));
 const storage_1 = __importDefault(require("./storage"));
+const os_1 = __importDefault(require("os"));
+const path_1 = require("path");
+const json_to_table_1 = require("./json-to-table");
 class App {
     export(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -93,7 +96,39 @@ class App {
             yield storage.setLast(models.workspace.name);
         });
     }
-    getLabelString() {
+    showDataAsTable(context, models) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(context);
+            // const div = document.createElement("div");
+            // div.innerHTML = "nejaky content <b>tucny</b>";
+            // context.app.dialog("Hele, co jde", div, {
+            //   wide: true,
+            //   tall: true,
+            //   skinny: true,
+            //   onHide: () => {
+            //     console.log("ishiding");
+            //   },
+            // });
+            if (this.lastResponseJsonBody) {
+                const filePath = path_1.join(os_1.default.tmpdir(), "insomnia-response-table.html");
+                var jsonToTable = new json_to_table_1.JsonToTable();
+                yield jsonToTable.saveToFile(filePath, this.lastResponseJsonBody);
+            }
+        });
+    }
+    processResponse(context, models) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(context, models);
+            try {
+                const resp = this.bufferToJsonObj(context.response.getBody());
+                this.lastResponseJsonBody = resp;
+            }
+            catch (_a) {
+                // no-op
+            }
+        });
+    }
+    getConnectionFileLabelString() {
         return "uuSync - Connect with file";
     }
     verifyConfig(storage, context, workspaceName) {
@@ -101,9 +136,15 @@ class App {
             if (yield storage.isConfigured(workspaceName)) {
                 return true;
             }
-            screen_helper_1.default.alertError(context, `Workspace not configured! Click on '${this.getLabelString()}' first.`);
+            screen_helper_1.default.alertError(context, `Workspace not configured! Click on '${this.getConnectionFileLabelString()}' first.`);
             return false;
         });
+    }
+    bufferToJsonObj(buf) {
+        return JSON.parse(buf.toString("utf-8"));
+    }
+    jsonObjToBuffer(obj) {
+        return Buffer.from(JSON.stringify(obj), "utf-8");
     }
 }
 exports.default = App;

@@ -22,9 +22,15 @@ module.exports.workspaceActions = [
         action: app.importLast.bind(app),
     },
     {
-        label: app.getLabelString(),
+        label: app.getConnectionFileLabelString(),
         icon: "fa-cog",
         action: app.connectWithFile.bind(app),
     },
+    {
+        label: "Show response as table",
+        icon: "fa-table",
+        action: app.showDataAsTable.bind(app),
+    },
 ];
+module.exports.responseHooks = [app.processResponse.bind(app)];
 //# sourceMappingURL=index.js.map
