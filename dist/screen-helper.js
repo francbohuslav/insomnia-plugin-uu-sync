@@ -15,10 +15,10 @@ class ScreenHelper {
             return yield context.app.alert("Error!", message);
         });
     }
-    static askExistingWorkspaceFilePath(context, options = {}) {
+    static askExistingWorkspaceFilePath(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield context.app.alert("Choose Insomnia workspace file", `Choose target file for import/export of current workspace. Confirm rewrite if you choose existing file. Actual: ${options.currentPath}`);
-            const path = yield context.app.showSaveDialog({ defaultPath: options.workspaceName });
+            yield context.app.alert("Choose Insomnia workspace file", `Choose target file for import/export of current workspace. Confirm rewrite dialog, it's ok.`);
+            const path = yield context.app.showSaveDialog();
             return ScreenHelper.normalizePath(path);
         });
     }

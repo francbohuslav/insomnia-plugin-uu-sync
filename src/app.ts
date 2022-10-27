@@ -1,79 +1,49 @@
-import FileNormalizer from "./file-normalizer";
-import { IInsomniaContext, IInsomniaModels } from "./insomnia";
-import ScreenHelper from "./screen-helper";
-import WorkspaceSaver from "./workspace-saver";
-import InsomniaStorage from "./storage";
-import fs from "fs/promises";
 import os from "os";
 import { join } from "path";
-import { JsonToTable } from "./json-to-table";
 import { ImportManager } from "./import-manager";
+import { IInsomniaContext, IInsomniaModels, IStorageConfig_Workspace } from "./insomnia";
+import { JsonToTable } from "./json-to-table";
+import ScreenHelper from "./screen-helper";
+import InsomniaStorage from "./storage";
 
 export default class App {
   lastResponseJsonBody: any;
 
-  public async export(context: IInsomniaContext, models: IInsomniaModels) {
+  // public async export(context: IInsomniaContext, models: IInsomniaModels) {
+  //   const storage = new InsomniaStorage(context);
+  //   if (!(await this.verifyConfig(storage, context, models.workspace.name))) {
+  //     return;
+  //   }
+  //   await storage.setLast(models.workspace.name);
+  //   const path = await storage.getPath(models.workspace.name);
+  //   const oneLineJson = await context.data.export.insomnia({
+  //     includePrivate: false,
+  //     format: "json",
+  //     workspace: models.workspace,
+  //   });
+
+  //   const normalizer = new FileNormalizer();
+  //   const jsonObject = normalizer.normalizeExport(oneLineJson);
+  //   const workspaceSaver = new WorkspaceSaver(path);
+  //   await workspaceSaver.exportOneFile(jsonObject);
+  //   await workspaceSaver.exportMultipleFiles(jsonObject);
+  // }
+
+  public async importActualWorkspace(context: IInsomniaContext, models: IInsomniaModels) {
     const storage = new InsomniaStorage(context);
-    if (!(await this.verifyConfig(storage, context, models.workspace.name))) {
+    const workspaceConfig = await this.verifyConfig(storage, context, models.workspace.name);
+    if (!workspaceConfig) {
       return;
     }
-    await storage.setLast(models.workspace.name);
-    const path = await storage.getPath(models.workspace.name);
-    const oneLineJson = await context.data.export.insomnia({
-      includePrivate: false,
-      format: "json",
-      workspace: models.workspace,
-    });
-
-    const normalizer = new FileNormalizer();
-    const jsonObject = normalizer.normalizeExport(oneLineJson);
-    const workspaceSaver = new WorkspaceSaver(path);
-    await workspaceSaver.exportOneFile(jsonObject);
-    await workspaceSaver.exportMultipleFiles(jsonObject);
+    const importManager = new ImportManager(context, models);
+    await importManager.importWorkspace(workspaceConfig.path);
   }
 
-  public async import(context: IInsomniaContext, models: IInsomniaModels) {
-    const storage = new InsomniaStorage(context);
-    let path: string = null;
-    if (await this.verifyConfig(storage, context, models.workspace.name)) {
-      path = await storage.getPath(models.workspace.name);
-    } else {
-      path = await ScreenHelper.askNewWorkspaceFilePath(context);
-    }
-    if (!path) {
-      return;
-    }
+  //TODO: BF: projit pak vse a zjistit jeslti se vse pouziva
 
-    const workspaceSaver = new WorkspaceSaver(path);
-    let json = await workspaceSaver.importMultipleFiles();
-    if (json.resources) {
-      const workSpace = json.resources.filter((r) => r._type == "workspace")[0];
-      if (workSpace) {
-        await storage.setLast(workSpace.name);
-        await storage.setPath(workSpace.name, path);
-      }
-    }
-    await context.data.import.raw(JSON.stringify(json));
-  }
-
-  public async importLast(context: IInsomniaContext, models: IInsomniaModels) {
-    const storage = new InsomniaStorage(context);
-    let lastWorkspace = await storage.getLast();
-    lastWorkspace = await ScreenHelper.askLastWorkspace(context, lastWorkspace);
-    if (!lastWorkspace) {
-      return;
-    }
-    if (!(await this.verifyConfig(storage, context, lastWorkspace))) {
-      return;
-    }
-    const path = await storage.getPath(lastWorkspace);
-    const workspaceSaver = new WorkspaceSaver(path);
-    let json = await workspaceSaver.importMultipleFiles();
-    await context.data.import.raw(JSON.stringify(json));
-  }
-
-  public showImportManager(context: IInsomniaContext, models: IInsomniaModels) {
-    context.app.dialog("Import manager", new ImportManager().getManagerDom(), {
+  public async showImportManager(context: IInsomniaContext, models: IInsomniaModels) {
+    const node = await new ImportManager(context, models).getManagerDom();
+    context.app.dialog("Import manager", node, {
       wide: true,
       tall: true,
       skinny: false,
@@ -81,20 +51,6 @@ export default class App {
       //   console.log("ishiding");
       // },
     });
-  }
-
-  //TODO: BF: zrusit
-  public async connectWithFile(context: IInsomniaContext, models: IInsomniaModels) {
-    const storage = new InsomniaStorage(context);
-    const filePath = await ScreenHelper.askExistingWorkspaceFilePath(context, {
-      currentPath: await storage.getPath(models.workspace.name),
-      workspaceName: "insomnia-workspace.json",
-    });
-    if (filePath == null) {
-      return;
-    }
-    await storage.setPath(models.workspace.name, filePath);
-    await storage.setLast(models.workspace.name);
   }
 
   public async showDataAsTable(context: IInsomniaContext, models: IInsomniaModels) {
@@ -152,12 +108,14 @@ export default class App {
     return "uuSync - Connect with file";
   }
 
-  private async verifyConfig(storage: InsomniaStorage, context: IInsomniaContext, workspaceName: string) {
-    if (await storage.isConfigured(workspaceName)) {
-      return true;
+  private async verifyConfig(storage: InsomniaStorage, context: IInsomniaContext, workspaceName: string): Promise<IStorageConfig_Workspace> {
+    const config = await storage.getConfig();
+    const workspaceConfig = Object.values(config.workspaces).find((w) => w.name === workspaceName);
+    if (workspaceConfig) {
+      return workspaceConfig;
     }
-    ScreenHelper.alertError(context, `Workspace not configured! Click on '${this.getConnectionFileLabelString()}' first.`);
-    return false;
+    ScreenHelper.alertError(context, `Workspace ${workspaceName} not configured! Import workspace in import manager.`);
+    return null;
   }
 
   private bufferToJsonObj(buf: Buffer): any {

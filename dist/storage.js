@@ -9,35 +9,38 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const filepathKey = "insomnia-plugin-uu-sync-filepath";
-const lastKey = "insomnia-plugin-uu-sync-last";
+const configKey = "insomnia-plugin-uu-sync-config";
 class Storage {
     constructor(context) {
         this.context = context;
     }
-    getPath(workSpaceName) {
+    getConfig() {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.context.store.getItem(filepathKey + "-" + workSpaceName);
+            const configAsString = yield this.context.store.getItem(configKey);
+            let config = {
+                workspaces: {},
+            };
+            try {
+                config = JSON.parse(configAsString);
+            }
+            catch (e) {
+                console.error(e);
+            }
+            if (!config) {
+                config = {
+                    workspaces: {},
+                };
+            }
+            if (!config.workspaces) {
+                config.workspaces = {};
+            }
+            return config;
         });
     }
-    setPath(workSpaceName, path) {
+    setConfig(config) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.context.store.setItem(filepathKey + "-" + workSpaceName, path);
-        });
-    }
-    isConfigured(workSpaceName) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.context.store.hasItem(filepathKey + "-" + workSpaceName);
-        });
-    }
-    setLast(workSpaceName) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.context.store.setItem(lastKey, workSpaceName);
-        });
-    }
-    getLast() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.context.store.getItem(lastKey);
+            const configAsString = JSON.stringify(config);
+            return yield this.context.store.setItem(configKey, configAsString);
         });
     }
 }

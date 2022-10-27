@@ -12,100 +12,54 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const file_normalizer_1 = __importDefault(require("./file-normalizer"));
-const screen_helper_1 = __importDefault(require("./screen-helper"));
-const workspace_saver_1 = __importDefault(require("./workspace-saver"));
-const storage_1 = __importDefault(require("./storage"));
 const os_1 = __importDefault(require("os"));
 const path_1 = require("path");
-const json_to_table_1 = require("./json-to-table");
 const import_manager_1 = require("./import-manager");
+const json_to_table_1 = require("./json-to-table");
+const screen_helper_1 = __importDefault(require("./screen-helper"));
+const storage_1 = __importDefault(require("./storage"));
 class App {
-    export(context, models) {
+    // public async export(context: IInsomniaContext, models: IInsomniaModels) {
+    //   const storage = new InsomniaStorage(context);
+    //   if (!(await this.verifyConfig(storage, context, models.workspace.name))) {
+    //     return;
+    //   }
+    //   await storage.setLast(models.workspace.name);
+    //   const path = await storage.getPath(models.workspace.name);
+    //   const oneLineJson = await context.data.export.insomnia({
+    //     includePrivate: false,
+    //     format: "json",
+    //     workspace: models.workspace,
+    //   });
+    //   const normalizer = new FileNormalizer();
+    //   const jsonObject = normalizer.normalizeExport(oneLineJson);
+    //   const workspaceSaver = new WorkspaceSaver(path);
+    //   await workspaceSaver.exportOneFile(jsonObject);
+    //   await workspaceSaver.exportMultipleFiles(jsonObject);
+    // }
+    importActualWorkspace(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
             const storage = new storage_1.default(context);
-            if (!(yield this.verifyConfig(storage, context, models.workspace.name))) {
+            const workspaceConfig = yield this.verifyConfig(storage, context, models.workspace.name);
+            if (!workspaceConfig) {
                 return;
             }
-            yield storage.setLast(models.workspace.name);
-            const path = yield storage.getPath(models.workspace.name);
-            const oneLineJson = yield context.data.export.insomnia({
-                includePrivate: false,
-                format: "json",
-                workspace: models.workspace,
-            });
-            const normalizer = new file_normalizer_1.default();
-            const jsonObject = normalizer.normalizeExport(oneLineJson);
-            const workspaceSaver = new workspace_saver_1.default(path);
-            yield workspaceSaver.exportOneFile(jsonObject);
-            yield workspaceSaver.exportMultipleFiles(jsonObject);
+            const importManager = new import_manager_1.ImportManager(context, models);
+            yield importManager.importWorkspace(workspaceConfig.path);
         });
     }
-    import(context, models) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const storage = new storage_1.default(context);
-            let path = null;
-            if (yield this.verifyConfig(storage, context, models.workspace.name)) {
-                path = yield storage.getPath(models.workspace.name);
-            }
-            else {
-                path = yield screen_helper_1.default.askNewWorkspaceFilePath(context);
-            }
-            if (!path) {
-                return;
-            }
-            const workspaceSaver = new workspace_saver_1.default(path);
-            let json = yield workspaceSaver.importMultipleFiles();
-            if (json.resources) {
-                const workSpace = json.resources.filter((r) => r._type == "workspace")[0];
-                if (workSpace) {
-                    yield storage.setLast(workSpace.name);
-                    yield storage.setPath(workSpace.name, path);
-                }
-            }
-            yield context.data.import.raw(JSON.stringify(json));
-        });
-    }
-    importLast(context, models) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const storage = new storage_1.default(context);
-            let lastWorkspace = yield storage.getLast();
-            lastWorkspace = yield screen_helper_1.default.askLastWorkspace(context, lastWorkspace);
-            if (!lastWorkspace) {
-                return;
-            }
-            if (!(yield this.verifyConfig(storage, context, lastWorkspace))) {
-                return;
-            }
-            const path = yield storage.getPath(lastWorkspace);
-            const workspaceSaver = new workspace_saver_1.default(path);
-            let json = yield workspaceSaver.importMultipleFiles();
-            yield context.data.import.raw(JSON.stringify(json));
-        });
-    }
+    //TODO: BF: projit pak vse a zjistit jeslti se vse pouziva
     showImportManager(context, models) {
-        context.app.dialog("Import manager", new import_manager_1.ImportManager().getManagerDom(), {
-            wide: true,
-            tall: true,
-            skinny: false,
-            // onHide: () => {
-            //   console.log("ishiding");
-            // },
-        });
-    }
-    //TODO: BF: zrusit
-    connectWithFile(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
-            const storage = new storage_1.default(context);
-            const filePath = yield screen_helper_1.default.askExistingWorkspaceFilePath(context, {
-                currentPath: yield storage.getPath(models.workspace.name),
-                workspaceName: "insomnia-workspace.json",
+            const node = yield new import_manager_1.ImportManager(context, models).getManagerDom();
+            context.app.dialog("Import manager", node, {
+                wide: true,
+                tall: true,
+                skinny: false,
+                // onHide: () => {
+                //   console.log("ishiding");
+                // },
             });
-            if (filePath == null) {
-                return;
-            }
-            yield storage.setPath(models.workspace.name, filePath);
-            yield storage.setLast(models.workspace.name);
         });
     }
     showDataAsTable(context, models) {
@@ -163,11 +117,13 @@ class App {
     }
     verifyConfig(storage, context, workspaceName) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (yield storage.isConfigured(workspaceName)) {
-                return true;
+            const config = yield storage.getConfig();
+            const workspaceConfig = Object.values(config.workspaces).find((w) => w.name === workspaceName);
+            if (workspaceConfig) {
+                return workspaceConfig;
             }
-            screen_helper_1.default.alertError(context, `Workspace not configured! Click on '${this.getConnectionFileLabelString()}' first.`);
-            return false;
+            screen_helper_1.default.alertError(context, `Workspace ${workspaceName} not configured! Import workspace in import manager.`);
+            return null;
         });
     }
     bufferToJsonObj(buf) {

@@ -17,7 +17,15 @@ interface IInsomniaStore {
   setItem(key: string, value: string): Promise<void>;
 }
 interface IInsomniaApp {
-  prompt(title: string, params: any): Promise<string>;
+  prompt(
+    title: string,
+    options: {
+      label?: string;
+      defaultValue?: string;
+      submitName?: string;
+      cancelable?: boolean;
+    }
+  ): Promise<string>;
   alert(title: string, message?: string): Promise<void>;
   dialog(title: string, body: HTMLElement, options: any): void;
   showGenericModalDialog(title: string, options: any): void;
@@ -45,6 +53,10 @@ export interface IInsomniaFileResource {
   modified: number;
 }
 
+export interface IInsomniaFileWorkspace {
+  name: string;
+}
+
 interface IInsomniaFileResourceBody {
   text: string;
   /** @deprecated */
@@ -54,4 +66,12 @@ interface IInsomniaFileResourceBody {
 interface IInsomniaResponse {
   getBody(): Buffer;
   setBody(body: Buffer): void;
+}
+
+export interface IStorageConfig {
+  workspaces: { [path: string]: IStorageConfig_Workspace };
+}
+export interface IStorageConfig_Workspace {
+  name: string;
+  path: string;
 }

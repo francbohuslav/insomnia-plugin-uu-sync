@@ -57,7 +57,7 @@ class WorkspaceSaver {
             }
         });
     }
-    importMultipleFiles() {
+    loadWorkspaceFile() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!fs.existsSync(this.workspaceFile)) {
                 try {

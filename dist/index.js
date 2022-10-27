@@ -6,15 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("./app"));
 const app = new app_1.default();
 module.exports.workspaceActions = [
+    // {
+    //   label: "uuSync - Export",
+    //   icon: "fa-download",
+    //   action: app.export.bind(app),
+    // },
     {
-        label: "uuSync - Export",
-        icon: "fa-download",
-        action: app.export.bind(app),
-    },
-    {
-        label: "uuSync - Import",
+        label: "uuSync - Re-import this workspace",
         icon: "fa-upload",
-        action: app.import.bind(app),
+        action: app.importActualWorkspace.bind(app),
     },
     {
         label: "uuSync - Import manager",

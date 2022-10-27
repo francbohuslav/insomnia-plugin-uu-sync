@@ -1,28 +1,32 @@
-import { IInsomniaContext } from "./insomnia";
+import { IInsomniaContext, IStorageConfig } from "./insomnia";
 
-const filepathKey = "insomnia-plugin-uu-sync-filepath";
-const lastKey = "insomnia-plugin-uu-sync-last";
+const configKey = "insomnia-plugin-uu-sync-config";
 
 export default class Storage {
-    constructor(private context: IInsomniaContext) {}
-
-    public async getPath(workSpaceName: string): Promise<string> {
-        return await this.context.store.getItem(filepathKey + "-" + workSpaceName);
+  constructor(private context: IInsomniaContext) {}
+  public async getConfig(): Promise<IStorageConfig> {
+    const configAsString = await this.context.store.getItem(configKey);
+    let config: IStorageConfig = {
+      workspaces: {},
+    };
+    try {
+      config = JSON.parse(configAsString);
+    } catch (e) {
+      console.error(e);
     }
-
-    public async setPath(workSpaceName: string, path: string) {
-        return await this.context.store.setItem(filepathKey + "-" + workSpaceName, path);
+    if (!config) {
+      config = {
+        workspaces: {},
+      };
     }
-
-    public async isConfigured(workSpaceName: string) {
-        return await this.context.store.hasItem(filepathKey + "-" + workSpaceName);
+    if (!config.workspaces) {
+      config.workspaces = {};
     }
+    return config;
+  }
 
-    public async setLast(workSpaceName: string) {
-        return await this.context.store.setItem(lastKey, workSpaceName);
-    }
-
-    public async getLast() {
-        return await this.context.store.getItem(lastKey);
-    }
+  public async setConfig(config: IStorageConfig): Promise<void> {
+    const configAsString = JSON.stringify(config);
+    return await this.context.store.setItem(configKey, configAsString);
+  }
 }
