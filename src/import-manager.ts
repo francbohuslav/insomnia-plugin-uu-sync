@@ -24,7 +24,7 @@ export class ImportManager {
       position:relative;
     }
     .import-manager td, .import-manager th {
-      padding: 4px 8px;
+      padding: 4px 20px;
     }
     .import-manager .buttons{
       margin-bottom: 0.5em;
@@ -56,7 +56,6 @@ export class ImportManager {
     this.refreshGui(config, wholeDom);
     const overlay = document.createElement("div");
     overlay.classList.add("overlay");
-    overlay.innerText = "Working, wait...";
     wholeDom.appendChild(overlay);
     return wholeDom;
   }
@@ -77,6 +76,27 @@ export class ImportManager {
     const commonPath = this.getCommonPath(workspaces);
     td.innerHTML = commonPath;
     tr.appendChild(td);
+
+    td = document.createElement("td");
+    let button = document.createElement("button");
+    button.classList.add("tag");
+    button.classList.add("bg-info");
+    button.innerText = "Import all";
+    button.addEventListener("click", async () => {
+      for (const workspace of workspaces) {
+        await this.importWorkspaceByGui(workspace.path, wholeDom, workspace.data.name);
+      }
+    });
+    td.appendChild(button);
+
+    button = document.createElement("button");
+    button.classList.add("tag");
+    button.classList.add("bg-info");
+    button.innerText = "Export all";
+    button.addEventListener("click", () => Promise.all([...workspaces].map((workspace) => this.exportWorkspaceByGui(workspace, wholeDom))));
+    td.appendChild(button);
+    tr.appendChild(td);
+
     tableBody.appendChild(tr);
 
     workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
@@ -102,7 +122,7 @@ export class ImportManager {
       button.classList.add("tag");
       button.classList.add("bg-info");
       button.innerText = "Export";
-      button.addEventListener("click", () => this.exportWorkspaceByGui(workspace.path, wholeDom));
+      button.addEventListener("click", () => this.exportWorkspaceByGui(workspace, wholeDom));
       td.appendChild(button);
 
       button = document.createElement("button");
@@ -125,9 +145,9 @@ export class ImportManager {
     await this.importWorkspaceByGui(filePath, wholeDom);
   }
 
-  private async importWorkspaceByGui(filePath: string, wholeDom: HTMLDivElement) {
+  private async importWorkspaceByGui(filePath: string, wholeDom: HTMLDivElement, progress?: string) {
     try {
-      this.showLoading(wholeDom, true);
+      this.showLoading(wholeDom, true, progress);
       await this.importWorkspace(filePath);
       const config = await this.storage.getConfig();
       this.refreshGui(config, wholeDom);
@@ -138,11 +158,11 @@ export class ImportManager {
     }
   }
 
-  private async exportWorkspaceByGui(filePath: string, wholeDom: HTMLDivElement) {
+  private async exportWorkspaceByGui(workspace: IStorage.IWorkspace, wholeDom: HTMLDivElement, progress?: string) {
     try {
-      this.showLoading(wholeDom, true);
+      this.showLoading(wholeDom, true, progress);
       const config = await this.storage.getConfig();
-      await this.exportWorkspace(config.workspaces[filePath]);
+      await this.exportWorkspace(workspace);
       this.refreshGui(config, wholeDom);
       this.showLoading(wholeDom, false);
     } catch (ex) {
@@ -217,8 +237,11 @@ export class ImportManager {
     await this.storage.setConfig(config);
   }
 
-  private showLoading(wholeDom: HTMLDivElement, on: boolean): void {
-    (wholeDom.querySelector(".overlay") as HTMLDivElement).style.display = on ? "flex" : "none";
+  private showLoading(wholeDom: HTMLDivElement, on: boolean, progress?: string): void {
+    const overlay = wholeDom.querySelector(".overlay") as HTMLDivElement;
+    overlay.style.display = on ? "flex" : "none";
+
+    overlay.innerText = "Working, wait..." + (progress !== undefined ? ` ${progress}` : "");
   }
 
   private getCommonPath(workspaces: IStorage.IWorkspace[]): string {

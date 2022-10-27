@@ -37,7 +37,7 @@ class ImportManager {
       position:relative;
     }
     .import-manager td, .import-manager th {
-      padding: 4px 8px;
+      padding: 4px 20px;
     }
     .import-manager .buttons{
       margin-bottom: 0.5em;
@@ -68,7 +68,6 @@ class ImportManager {
             this.refreshGui(config, wholeDom);
             const overlay = document.createElement("div");
             overlay.classList.add("overlay");
-            overlay.innerText = "Working, wait...";
             wholeDom.appendChild(overlay);
             return wholeDom;
         });
@@ -86,6 +85,24 @@ class ImportManager {
         td = document.createElement("td");
         const commonPath = this.getCommonPath(workspaces);
         td.innerHTML = commonPath;
+        tr.appendChild(td);
+        td = document.createElement("td");
+        let button = document.createElement("button");
+        button.classList.add("tag");
+        button.classList.add("bg-info");
+        button.innerText = "Import all";
+        button.addEventListener("click", () => __awaiter(this, void 0, void 0, function* () {
+            for (const workspace of workspaces) {
+                yield this.importWorkspaceByGui(workspace.path, wholeDom, workspace.data.name);
+            }
+        }));
+        td.appendChild(button);
+        button = document.createElement("button");
+        button.classList.add("tag");
+        button.classList.add("bg-info");
+        button.innerText = "Export all";
+        button.addEventListener("click", () => Promise.all([...workspaces].map((workspace) => this.exportWorkspaceByGui(workspace, wholeDom))));
+        td.appendChild(button);
         tr.appendChild(td);
         tableBody.appendChild(tr);
         workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
@@ -108,7 +125,7 @@ class ImportManager {
             button.classList.add("tag");
             button.classList.add("bg-info");
             button.innerText = "Export";
-            button.addEventListener("click", () => this.exportWorkspaceByGui(workspace.path, wholeDom));
+            button.addEventListener("click", () => this.exportWorkspaceByGui(workspace, wholeDom));
             td.appendChild(button);
             button = document.createElement("button");
             button.classList.add("tag");
@@ -129,10 +146,10 @@ class ImportManager {
             yield this.importWorkspaceByGui(filePath, wholeDom);
         });
     }
-    importWorkspaceByGui(filePath, wholeDom) {
+    importWorkspaceByGui(filePath, wholeDom, progress) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                this.showLoading(wholeDom, true);
+                this.showLoading(wholeDom, true, progress);
                 yield this.importWorkspace(filePath);
                 const config = yield this.storage.getConfig();
                 this.refreshGui(config, wholeDom);
@@ -144,12 +161,12 @@ class ImportManager {
             }
         });
     }
-    exportWorkspaceByGui(filePath, wholeDom) {
+    exportWorkspaceByGui(workspace, wholeDom, progress) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                this.showLoading(wholeDom, true);
+                this.showLoading(wholeDom, true, progress);
                 const config = yield this.storage.getConfig();
-                yield this.exportWorkspace(config.workspaces[filePath]);
+                yield this.exportWorkspace(workspace);
                 this.refreshGui(config, wholeDom);
                 this.showLoading(wholeDom, false);
             }
@@ -230,8 +247,10 @@ class ImportManager {
             yield this.storage.setConfig(config);
         });
     }
-    showLoading(wholeDom, on) {
-        wholeDom.querySelector(".overlay").style.display = on ? "flex" : "none";
+    showLoading(wholeDom, on, progress) {
+        const overlay = wholeDom.querySelector(".overlay");
+        overlay.style.display = on ? "flex" : "none";
+        overlay.innerText = "Working, wait..." + (progress !== undefined ? ` ${progress}` : "");
     }
     getCommonPath(workspaces) {
         var _a;
