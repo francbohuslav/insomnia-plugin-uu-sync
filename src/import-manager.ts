@@ -67,6 +67,18 @@ export class ImportManager {
     const tableBody = wholeDom.querySelector("table > tbody");
     tableBody.innerHTML = "";
     const workspaces = Object.values(config.workspaces);
+
+    const tr = document.createElement("tr");
+    let td = document.createElement("td");
+    td.innerHTML = `${workspaces.length}x`;
+    tr.appendChild(td);
+
+    td = document.createElement("td");
+    const commonPath = this.getCommonPath(workspaces);
+    td.innerHTML = commonPath;
+    tr.appendChild(td);
+    tableBody.appendChild(tr);
+
     workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
     workspaces.forEach((workspace) => {
       const tr = document.createElement("tr");
@@ -75,7 +87,7 @@ export class ImportManager {
       tr.appendChild(td);
 
       td = document.createElement("td");
-      td.innerText = workspace.path;
+      td.innerText = workspace.path.slice(commonPath.length);
       tr.appendChild(td);
 
       td = document.createElement("td");
@@ -207,5 +219,20 @@ export class ImportManager {
 
   private showLoading(wholeDom: HTMLDivElement, on: boolean): void {
     (wholeDom.querySelector(".overlay") as HTMLDivElement).style.display = on ? "flex" : "none";
+  }
+
+  private getCommonPath(workspaces: IStorage.IWorkspace[]): string {
+    let commonPath = workspaces[0]?.path || "";
+    for (const workspace of workspaces) {
+      const c1Parts = commonPath.split("");
+      const c2Parts = workspace.path.split("");
+      for (let i = 0; i < Math.min(c1Parts.length, c2Parts.length); i++) {
+        if (c1Parts[i] != c2Parts[i]) {
+          commonPath = commonPath.substring(0, i);
+          break;
+        }
+      }
+    }
+    return commonPath;
   }
 }

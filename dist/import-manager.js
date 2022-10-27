@@ -79,6 +79,15 @@ class ImportManager {
         const tableBody = wholeDom.querySelector("table > tbody");
         tableBody.innerHTML = "";
         const workspaces = Object.values(config.workspaces);
+        const tr = document.createElement("tr");
+        let td = document.createElement("td");
+        td.innerHTML = `${workspaces.length}x`;
+        tr.appendChild(td);
+        td = document.createElement("td");
+        const commonPath = this.getCommonPath(workspaces);
+        td.innerHTML = commonPath;
+        tr.appendChild(td);
+        tableBody.appendChild(tr);
         workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
         workspaces.forEach((workspace) => {
             const tr = document.createElement("tr");
@@ -86,7 +95,7 @@ class ImportManager {
             td.innerHTML = `<strong>${workspace.data.name}</strong>`;
             tr.appendChild(td);
             td = document.createElement("td");
-            td.innerText = workspace.path;
+            td.innerText = workspace.path.slice(commonPath.length);
             tr.appendChild(td);
             td = document.createElement("td");
             let button = document.createElement("button");
@@ -223,6 +232,21 @@ class ImportManager {
     }
     showLoading(wholeDom, on) {
         wholeDom.querySelector(".overlay").style.display = on ? "flex" : "none";
+    }
+    getCommonPath(workspaces) {
+        var _a;
+        let commonPath = ((_a = workspaces[0]) === null || _a === void 0 ? void 0 : _a.path) || "";
+        for (const workspace of workspaces) {
+            const c1Parts = commonPath.split("");
+            const c2Parts = workspace.path.split("");
+            for (let i = 0; i < Math.min(c1Parts.length, c2Parts.length); i++) {
+                if (c1Parts[i] != c2Parts[i]) {
+                    commonPath = commonPath.substring(0, i);
+                    break;
+                }
+            }
+        }
+        return commonPath;
     }
 }
 exports.ImportManager = ImportManager;
