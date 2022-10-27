@@ -3,13 +3,13 @@ import App from "./app";
 const app = new App();
 
 module.exports.workspaceActions = [
-  // {
-  //   label: "uuSync - Export",
-  //   icon: "fa-download",
-  //   action: app.export.bind(app),
-  // },
   {
-    label: "uuSync - Re-import this workspace",
+    label: "uuSync - Export this workspace",
+    icon: "fa-download",
+    action: app.exportActualWorkspace.bind(app),
+  },
+  {
+    label: "uuSync - Import this workspace",
     icon: "fa-upload",
     action: app.importActualWorkspace.bind(app),
   },

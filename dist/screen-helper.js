@@ -15,33 +15,11 @@ class ScreenHelper {
             return yield context.app.alert("Error!", message);
         });
     }
-    static askExistingWorkspaceFilePath(context) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield context.app.alert("Choose Insomnia workspace file", `Choose target file for import/export of current workspace. Confirm rewrite dialog, it's ok.`);
-            const path = yield context.app.showSaveDialog();
-            return ScreenHelper.normalizePath(path);
-        });
-    }
     static askNewWorkspaceFilePath(context) {
         return __awaiter(this, void 0, void 0, function* () {
             yield context.app.alert("Choose Insomnia workspace file", `Choose source file of new workspace. Confirm rewrite question.`);
             const path = yield context.app.showSaveDialog();
             return ScreenHelper.normalizePath(path);
-        });
-    }
-    static askLastWorkspace(context, lastWorkspace) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                return yield context.app.prompt("Workspace to import", {
-                    label: "Specify name of workspace to import. Can be also some used but removed from Insomnia.",
-                    defaultValue: lastWorkspace || "",
-                    submitName: "Import",
-                    cancelable: true,
-                });
-            }
-            catch (error) {
-                return null;
-            }
         });
     }
     static normalizePath(path) {

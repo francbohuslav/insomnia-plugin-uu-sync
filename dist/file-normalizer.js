@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const insomnia_file_1 = require("./insomnia-file");
 class FileNormalizer {
     normalizeExport(oneLineJson) {
         const content = JSON.parse(oneLineJson);
@@ -8,7 +9,7 @@ class FileNormalizer {
         content.resources.sort(this.compareResources.bind(this));
         // Delete obsolete
         content.resources.forEach((resource) => {
-            if (resource.body && resource.body.__uuSyncText) {
+            if (insomnia_file_1.InsomniaFile.isRequestResource(resource) && resource.body.__uuSyncText) {
                 delete resource.body.__uuSyncText;
             }
         });
@@ -19,7 +20,7 @@ class FileNormalizer {
         return content;
     }
     getRequestsWithBody(resources) {
-        return resources.filter((resource) => resource._type == "request" && resource.body);
+        return resources.filter((resource) => insomnia_file_1.InsomniaFile.isRequestResource(resource) && resource.body);
     }
     setTimestamps(resource) {
         if (resource.modified) {

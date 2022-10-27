@@ -1,35 +1,25 @@
 import os from "os";
 import { join } from "path";
 import { ImportManager } from "./import-manager";
-import { IInsomniaContext, IInsomniaModels, IStorageConfig_Workspace } from "./insomnia";
+import { Insomnia } from "./insomnia-interfaces";
 import { JsonToTable } from "./json-to-table";
 import ScreenHelper from "./screen-helper";
-import InsomniaStorage from "./storage";
+import InsomniaStorage, { IStorage } from "./storage";
 
 export default class App {
   lastResponseJsonBody: any;
 
-  // public async export(context: IInsomniaContext, models: IInsomniaModels) {
-  //   const storage = new InsomniaStorage(context);
-  //   if (!(await this.verifyConfig(storage, context, models.workspace.name))) {
-  //     return;
-  //   }
-  //   await storage.setLast(models.workspace.name);
-  //   const path = await storage.getPath(models.workspace.name);
-  //   const oneLineJson = await context.data.export.insomnia({
-  //     includePrivate: false,
-  //     format: "json",
-  //     workspace: models.workspace,
-  //   });
+  public async exportActualWorkspace(context: Insomnia.IContext, models: Insomnia.IModels) {
+    const storage = new InsomniaStorage(context);
+    const workspaceConfig = await this.verifyConfig(storage, context, models.workspace.name);
+    if (!workspaceConfig) {
+      return;
+    }
+    const importManager = new ImportManager(context, models);
+    await importManager.exportWorkspace(workspaceConfig);
+  }
 
-  //   const normalizer = new FileNormalizer();
-  //   const jsonObject = normalizer.normalizeExport(oneLineJson);
-  //   const workspaceSaver = new WorkspaceSaver(path);
-  //   await workspaceSaver.exportOneFile(jsonObject);
-  //   await workspaceSaver.exportMultipleFiles(jsonObject);
-  // }
-
-  public async importActualWorkspace(context: IInsomniaContext, models: IInsomniaModels) {
+  public async importActualWorkspace(context: Insomnia.IContext, models: Insomnia.IModels) {
     const storage = new InsomniaStorage(context);
     const workspaceConfig = await this.verifyConfig(storage, context, models.workspace.name);
     if (!workspaceConfig) {
@@ -39,21 +29,16 @@ export default class App {
     await importManager.importWorkspace(workspaceConfig.path);
   }
 
-  //TODO: BF: projit pak vse a zjistit jeslti se vse pouziva
-
-  public async showImportManager(context: IInsomniaContext, models: IInsomniaModels) {
+  public async showImportManager(context: Insomnia.IContext, models: Insomnia.IModels) {
     const node = await new ImportManager(context, models).getManagerDom();
     context.app.dialog("Import manager", node, {
       wide: true,
       tall: true,
       skinny: false,
-      // onHide: () => {
-      //   console.log("ishiding");
-      // },
     });
   }
 
-  public async showDataAsTable(context: IInsomniaContext, models: IInsomniaModels) {
+  public async showDataAsTable(context: Insomnia.IContext) {
     if (!this.lastResponseJsonBody) {
       this.lastResponseJsonBody = {
         itemList: [
@@ -87,15 +72,10 @@ export default class App {
       wide: true,
       tall: true,
       skinny: false,
-      // onHide: () => {
-      //   console.log("ishiding");
-      // },
     });
   }
 
-  public async processResponse(context: IInsomniaContext, models: IInsomniaModels): Promise<void> {
-    console.log(context, models);
-
+  public async processResponse(context: Insomnia.IContext): Promise<void> {
     try {
       const resp = this.bufferToJsonObj(context.response.getBody());
       this.lastResponseJsonBody = resp;
@@ -108,9 +88,9 @@ export default class App {
     return "uuSync - Connect with file";
   }
 
-  private async verifyConfig(storage: InsomniaStorage, context: IInsomniaContext, workspaceName: string): Promise<IStorageConfig_Workspace> {
+  private async verifyConfig(storage: InsomniaStorage, context: Insomnia.IContext, workspaceName: string): Promise<IStorage.IWorkspace> {
     const config = await storage.getConfig();
-    const workspaceConfig = Object.values(config.workspaces).find((w) => w.name === workspaceName);
+    const workspaceConfig = Object.values(config.workspaces).find((w) => w.data.name === workspaceName);
     if (workspaceConfig) {
       return workspaceConfig;
     }
@@ -120,8 +100,5 @@ export default class App {
 
   private bufferToJsonObj(buf: Buffer): any {
     return JSON.parse(buf.toString("utf-8"));
-  }
-  private jsonObjToBuffer(obj: any): Buffer {
-    return Buffer.from(JSON.stringify(obj), "utf-8");
   }
 }

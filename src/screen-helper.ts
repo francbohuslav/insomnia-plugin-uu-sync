@@ -1,34 +1,14 @@
-import { IInsomniaContext } from "./insomnia";
+import { Insomnia } from "./insomnia-interfaces";
 
 export default class ScreenHelper {
-  public static async alertError(context: IInsomniaContext, message: string) {
+  public static async alertError(context: Insomnia.IContext, message: string) {
     return await context.app.alert("Error!", message);
   }
 
-  public static async askExistingWorkspaceFilePath(context: IInsomniaContext) {
-    await context.app.alert("Choose Insomnia workspace file", `Choose target file for import/export of current workspace. Confirm rewrite dialog, it's ok.`);
-    const path = await context.app.showSaveDialog();
-
-    return ScreenHelper.normalizePath(path);
-  }
-
-  public static async askNewWorkspaceFilePath(context: IInsomniaContext) {
+  public static async askNewWorkspaceFilePath(context: Insomnia.IContext) {
     await context.app.alert("Choose Insomnia workspace file", `Choose source file of new workspace. Confirm rewrite question.`);
     const path = await context.app.showSaveDialog();
     return ScreenHelper.normalizePath(path);
-  }
-
-  public static async askLastWorkspace(context: IInsomniaContext, lastWorkspace: string) {
-    try {
-      return await context.app.prompt("Workspace to import", {
-        label: "Specify name of workspace to import. Can be also some used but removed from Insomnia.",
-        defaultValue: lastWorkspace || "",
-        submitName: "Import",
-        cancelable: true,
-      });
-    } catch (error) {
-      return null;
-    }
   }
 
   private static normalizePath(path: string): string {

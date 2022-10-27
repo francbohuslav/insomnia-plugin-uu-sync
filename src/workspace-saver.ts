@@ -1,6 +1,6 @@
 import { AppError } from "./app-error";
 import FileNormalizer from "./file-normalizer";
-import { IInsomniaFile, IInsomniaFileResource } from "./insomnia";
+import { InsomniaFile } from "./insomnia-file";
 
 const fs = require("fs");
 const path = require("path");
@@ -20,12 +20,12 @@ export default class WorkspaceSaver {
     this.workspaceFile = path.join(this.folderPath, "_workspace.json");
   }
 
-  public async exportOneFile(jsonObject: IInsomniaFile): Promise<void> {
+  public async exportOneFile(jsonObject: InsomniaFile.IFile): Promise<void> {
     const formattedJson = JSON.stringify(jsonObject, null, 2);
     await writeFile(this.insomniaFilePath, formattedJson);
   }
 
-  public async exportMultipleFiles(jsonObject: IInsomniaFile): Promise<void> {
+  public async exportMultipleFiles(jsonObject: InsomniaFile.IFile): Promise<void> {
     try {
       jsonObject = JSON.parse(JSON.stringify(jsonObject));
       await mkdir(this.folderPath, { recursive: true });
@@ -46,11 +46,11 @@ export default class WorkspaceSaver {
     }
   }
 
-  public async loadWorkspaceFile(): Promise<IInsomniaFile> {
+  public async loadWorkspaceFile(): Promise<InsomniaFile.IFile> {
     if (!fs.existsSync(this.workspaceFile)) {
       try {
         const formattedJson = await readFile(this.insomniaFilePath, "utf8");
-        let jsonObject: IInsomniaFile = JSON.parse(formattedJson);
+        let jsonObject: InsomniaFile.IFile = JSON.parse(formattedJson);
         const normalizer = new FileNormalizer();
         jsonObject = normalizer.normalizeImport(jsonObject);
         return jsonObject;
@@ -60,7 +60,7 @@ export default class WorkspaceSaver {
     } else {
       try {
         const formattedJson = await readFile(this.workspaceFile, "utf8");
-        const jsonObject: IInsomniaFile = JSON.parse(formattedJson);
+        const jsonObject: InsomniaFile.IFile = JSON.parse(formattedJson);
         const resourcesIds: string[] = [...jsonObject.resources] as any;
         jsonObject.resources = [];
         for (const resourceIdWithName of resourcesIds) {
@@ -79,7 +79,7 @@ export default class WorkspaceSaver {
     return files.filter((file) => file != "_workspace.json");
   }
 
-  private getResourceIdWithName(resource: IInsomniaFileResource): string {
+  private getResourceIdWithName(resource: InsomniaFile.IResource): string {
     return resource._id + " | " + resource.name;
   }
 
@@ -87,10 +87,10 @@ export default class WorkspaceSaver {
     return resourceIdWithName.split("|")[0].trim();
   }
 
-  private async saveResource(resource: IInsomniaFileResource): Promise<void> {
+  private async saveResource(resource: InsomniaFile.IResource): Promise<void> {
     const fullFilePath = path.join(this.folderPath, resource._id + ".json");
     try {
-      if (resource._type == "request" && resource.body && resource.body.text) {
+      if (InsomniaFile.isRequestResource(resource) && resource.body && resource.body.text) {
         resource.body.text = resource.body.text.split("\n") as any;
       }
       const formattedJson = JSON.stringify(resource, null, 2);
@@ -100,12 +100,12 @@ export default class WorkspaceSaver {
     }
   }
 
-  private async loadResource(resourceId: string): Promise<IInsomniaFileResource> {
+  private async loadResource(resourceId: string): Promise<InsomniaFile.IResource> {
     const fullFilePath = path.join(this.folderPath, resourceId + ".json");
     try {
       const formattedJson = await readFile(fullFilePath);
-      const resource: IInsomniaFileResource = JSON.parse(formattedJson);
-      if (resource._type == "request" && resource.body && resource.body.text) {
+      const resource: InsomniaFile.IResource = JSON.parse(formattedJson);
+      if (InsomniaFile.isRequestResource(resource) && resource.body && resource.body.text) {
         resource.body.text = (resource.body.text as any).join("\n");
       }
       return resource;

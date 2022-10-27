@@ -19,24 +19,17 @@ const json_to_table_1 = require("./json-to-table");
 const screen_helper_1 = __importDefault(require("./screen-helper"));
 const storage_1 = __importDefault(require("./storage"));
 class App {
-    // public async export(context: IInsomniaContext, models: IInsomniaModels) {
-    //   const storage = new InsomniaStorage(context);
-    //   if (!(await this.verifyConfig(storage, context, models.workspace.name))) {
-    //     return;
-    //   }
-    //   await storage.setLast(models.workspace.name);
-    //   const path = await storage.getPath(models.workspace.name);
-    //   const oneLineJson = await context.data.export.insomnia({
-    //     includePrivate: false,
-    //     format: "json",
-    //     workspace: models.workspace,
-    //   });
-    //   const normalizer = new FileNormalizer();
-    //   const jsonObject = normalizer.normalizeExport(oneLineJson);
-    //   const workspaceSaver = new WorkspaceSaver(path);
-    //   await workspaceSaver.exportOneFile(jsonObject);
-    //   await workspaceSaver.exportMultipleFiles(jsonObject);
-    // }
+    exportActualWorkspace(context, models) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const storage = new storage_1.default(context);
+            const workspaceConfig = yield this.verifyConfig(storage, context, models.workspace.name);
+            if (!workspaceConfig) {
+                return;
+            }
+            const importManager = new import_manager_1.ImportManager(context, models);
+            yield importManager.exportWorkspace(workspaceConfig);
+        });
+    }
     importActualWorkspace(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
             const storage = new storage_1.default(context);
@@ -48,7 +41,6 @@ class App {
             yield importManager.importWorkspace(workspaceConfig.path);
         });
     }
-    //TODO: BF: projit pak vse a zjistit jeslti se vse pouziva
     showImportManager(context, models) {
         return __awaiter(this, void 0, void 0, function* () {
             const node = yield new import_manager_1.ImportManager(context, models).getManagerDom();
@@ -56,13 +48,10 @@ class App {
                 wide: true,
                 tall: true,
                 skinny: false,
-                // onHide: () => {
-                //   console.log("ishiding");
-                // },
             });
         });
     }
-    showDataAsTable(context, models) {
+    showDataAsTable(context) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.lastResponseJsonBody) {
                 this.lastResponseJsonBody = {
@@ -94,15 +83,11 @@ class App {
                 wide: true,
                 tall: true,
                 skinny: false,
-                // onHide: () => {
-                //   console.log("ishiding");
-                // },
             });
         });
     }
-    processResponse(context, models) {
+    processResponse(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(context, models);
             try {
                 const resp = this.bufferToJsonObj(context.response.getBody());
                 this.lastResponseJsonBody = resp;
@@ -118,7 +103,7 @@ class App {
     verifyConfig(storage, context, workspaceName) {
         return __awaiter(this, void 0, void 0, function* () {
             const config = yield storage.getConfig();
-            const workspaceConfig = Object.values(config.workspaces).find((w) => w.name === workspaceName);
+            const workspaceConfig = Object.values(config.workspaces).find((w) => w.data.name === workspaceName);
             if (workspaceConfig) {
                 return workspaceConfig;
             }
@@ -128,9 +113,6 @@ class App {
     }
     bufferToJsonObj(buf) {
         return JSON.parse(buf.toString("utf-8"));
-    }
-    jsonObjToBuffer(obj) {
-        return Buffer.from(JSON.stringify(obj), "utf-8");
     }
 }
 exports.default = App;

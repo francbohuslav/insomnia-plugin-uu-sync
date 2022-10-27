@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const app_error_1 = require("./app-error");
 const file_normalizer_1 = __importDefault(require("./file-normalizer"));
+const insomnia_file_1 = require("./insomnia-file");
 const fs = require("fs");
 const path = require("path");
 const promisify = require("util").promisify;
@@ -105,7 +106,7 @@ class WorkspaceSaver {
         return __awaiter(this, void 0, void 0, function* () {
             const fullFilePath = path.join(this.folderPath, resource._id + ".json");
             try {
-                if (resource._type == "request" && resource.body && resource.body.text) {
+                if (insomnia_file_1.InsomniaFile.isRequestResource(resource) && resource.body && resource.body.text) {
                     resource.body.text = resource.body.text.split("\n");
                 }
                 const formattedJson = JSON.stringify(resource, null, 2);
@@ -122,7 +123,7 @@ class WorkspaceSaver {
             try {
                 const formattedJson = yield readFile(fullFilePath);
                 const resource = JSON.parse(formattedJson);
-                if (resource._type == "request" && resource.body && resource.body.text) {
+                if (insomnia_file_1.InsomniaFile.isRequestResource(resource) && resource.body && resource.body.text) {
                     resource.body.text = resource.body.text.join("\n");
                 }
                 return resource;

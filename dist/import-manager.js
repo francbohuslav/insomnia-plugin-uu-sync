@@ -13,6 +13,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportManager = void 0;
+const file_normalizer_1 = __importDefault(require("./file-normalizer"));
+const insomnia_file_1 = require("./insomnia-file");
 const screen_helper_1 = __importDefault(require("./screen-helper"));
 const storage_1 = __importDefault(require("./storage"));
 const workspace_saver_1 = __importDefault(require("./workspace-saver"));
@@ -77,11 +79,11 @@ class ImportManager {
         const tableBody = wholeDom.querySelector("table > tbody");
         tableBody.innerHTML = "";
         const workspaces = Object.values(config.workspaces);
-        workspaces.sort((a, b) => a.name.localeCompare(b.name));
+        workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
         workspaces.forEach((workspace) => {
             const tr = document.createElement("tr");
             let td = document.createElement("td");
-            td.innerHTML = `<strong>${workspace.name}</strong>`;
+            td.innerHTML = `<strong>${workspace.data.name}</strong>`;
             tr.appendChild(td);
             td = document.createElement("td");
             td.innerText = workspace.path;
@@ -96,6 +98,12 @@ class ImportManager {
             button = document.createElement("button");
             button.classList.add("tag");
             button.classList.add("bg-info");
+            button.innerText = "Export";
+            button.addEventListener("click", () => this.exportWorkspaceByGui(workspace.path, wholeDom));
+            td.appendChild(button);
+            button = document.createElement("button");
+            button.classList.add("tag");
+            button.classList.add("bg-danger");
             button.innerText = "Delete";
             button.addEventListener("click", () => this.deleteWorkspace(workspace, wholeDom));
             td.appendChild(button);
@@ -105,7 +113,7 @@ class ImportManager {
     }
     newImportWizard(wholeDom) {
         return __awaiter(this, void 0, void 0, function* () {
-            const filePath = yield screen_helper_1.default.askExistingWorkspaceFilePath(this.context);
+            const filePath = yield screen_helper_1.default.askNewWorkspaceFilePath(this.context);
             if (filePath == null) {
                 return;
             }
@@ -127,6 +135,45 @@ class ImportManager {
             }
         });
     }
+    exportWorkspaceByGui(filePath, wholeDom) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                this.showLoading(wholeDom, true);
+                const config = yield this.storage.getConfig();
+                yield this.exportWorkspace(config.workspaces[filePath]);
+                this.refreshGui(config, wholeDom);
+                this.showLoading(wholeDom, false);
+            }
+            catch (ex) {
+                this.showLoading(wholeDom, false);
+                throw ex;
+            }
+        });
+    }
+    exportWorkspace(workspaceConfig) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const oneLineJson = yield this.context.data.export.insomnia({
+                includePrivate: false,
+                format: "json",
+                workspace: {
+                    _id: workspaceConfig.data._id,
+                    created: workspaceConfig.data.created,
+                    description: workspaceConfig.data.description,
+                    modified: workspaceConfig.data.modified,
+                    name: workspaceConfig.data.name,
+                    parentId: workspaceConfig.data.parentId,
+                    scope: workspaceConfig.data.scope,
+                    // This is only difference
+                    type: workspaceConfig.data._type,
+                },
+            });
+            const normalizer = new file_normalizer_1.default();
+            const jsonObject = normalizer.normalizeExport(oneLineJson);
+            const workspaceSaver = new workspace_saver_1.default(workspaceConfig.path);
+            yield workspaceSaver.exportOneFile(jsonObject);
+            yield workspaceSaver.exportMultipleFiles(jsonObject);
+        });
+    }
     deleteWorkspace(workspace, wholeDom) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -134,7 +181,7 @@ class ImportManager {
                 try {
                     workSpaceName = yield this.context.app.prompt("Do you really want to remove this workspace from list? Workspace will not be delete from Insomnia.", {
                         cancelable: true,
-                        defaultValue: workspace.name,
+                        defaultValue: workspace.data.name,
                         submitName: "Yes, delete it",
                         label: "Workspace",
                     });
@@ -146,7 +193,7 @@ class ImportManager {
                     return;
                 }
                 const config = yield this.storage.getConfig();
-                workspace = Object.values(config.workspaces).find((w) => w.name === workSpaceName.trim());
+                workspace = Object.values(config.workspaces).find((w) => w.data.name === workSpaceName.trim());
                 this.showLoading(wholeDom, true);
                 delete config.workspaces[workspace.path];
                 yield this.storage.setConfig(config);
@@ -162,21 +209,16 @@ class ImportManager {
     importWorkspace(filePath) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("loading");
             const workspaceSaver = new workspace_saver_1.default(filePath);
             let json = yield workspaceSaver.loadWorkspaceFile();
-            let workspace = (_a = json.resources) === null || _a === void 0 ? void 0 : _a.filter((r) => r._type == "workspace")[0];
+            let workspace = (_a = json.resources) === null || _a === void 0 ? void 0 : _a.filter((r) => insomnia_file_1.InsomniaFile.isWorkspaceResource(r))[0];
             yield this.context.data.import.raw(JSON.stringify(json));
-            workspace || (workspace = {
-                name: "Unknown name",
-            });
             const config = yield this.storage.getConfig();
             config.workspaces[filePath] = {
-                name: workspace.name,
                 path: filePath,
+                data: workspace,
             };
             yield this.storage.setConfig(config);
-            console.log("laoded", config);
         });
     }
     showLoading(wholeDom, on) {

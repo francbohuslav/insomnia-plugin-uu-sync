@@ -34,11 +34,13 @@ class Storage {
             if (!config.workspaces) {
                 config.workspaces = {};
             }
+            console.log("Loading", config);
             return config;
         });
     }
     setConfig(config) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log("Saving", config);
             const configAsString = JSON.stringify(config);
             return yield this.context.store.setItem(configKey, configAsString);
         });

@@ -1,12 +1,14 @@
-import { IInsomniaContext, IInsomniaFileWorkspace, IInsomniaModels, IStorageConfig, IStorageConfig_Workspace } from "./insomnia";
+import FileNormalizer from "./file-normalizer";
+import { InsomniaFile } from "./insomnia-file";
+import { Insomnia } from "./insomnia-interfaces";
 import ScreenHelper from "./screen-helper";
-import InsomniaStorage from "./storage";
+import InsomniaStorage, { IStorage } from "./storage";
 import WorkspaceSaver from "./workspace-saver";
 
 export class ImportManager {
   storage: InsomniaStorage;
 
-  constructor(private context: IInsomniaContext, private models: IInsomniaModels) {
+  constructor(private context: Insomnia.IContext, private models: Insomnia.IModels) {
     this.storage = new InsomniaStorage(this.context);
   }
 
@@ -59,17 +61,17 @@ export class ImportManager {
     return wholeDom;
   }
 
-  private refreshGui(config: IStorageConfig, wholeDom: HTMLDivElement) {
+  private refreshGui(config: IStorage.IConfig, wholeDom: HTMLDivElement) {
     const tableHead = wholeDom.querySelector("table > thead");
     tableHead.innerHTML = `<tr><th>Workspace</th><th>Path</th><th>Actions</th></tr>`;
     const tableBody = wholeDom.querySelector("table > tbody");
     tableBody.innerHTML = "";
     const workspaces = Object.values(config.workspaces);
-    workspaces.sort((a, b) => a.name.localeCompare(b.name));
+    workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
     workspaces.forEach((workspace) => {
       const tr = document.createElement("tr");
       let td = document.createElement("td");
-      td.innerHTML = `<strong>${workspace.name}</strong>`;
+      td.innerHTML = `<strong>${workspace.data.name}</strong>`;
       tr.appendChild(td);
 
       td = document.createElement("td");
@@ -87,6 +89,13 @@ export class ImportManager {
       button = document.createElement("button");
       button.classList.add("tag");
       button.classList.add("bg-info");
+      button.innerText = "Export";
+      button.addEventListener("click", () => this.exportWorkspaceByGui(workspace.path, wholeDom));
+      td.appendChild(button);
+
+      button = document.createElement("button");
+      button.classList.add("tag");
+      button.classList.add("bg-danger");
       button.innerText = "Delete";
       button.addEventListener("click", () => this.deleteWorkspace(workspace, wholeDom));
       td.appendChild(button);
@@ -97,7 +106,7 @@ export class ImportManager {
   }
 
   private async newImportWizard(wholeDom: HTMLDivElement) {
-    const filePath = await ScreenHelper.askExistingWorkspaceFilePath(this.context);
+    const filePath = await ScreenHelper.askNewWorkspaceFilePath(this.context);
     if (filePath == null) {
       return;
     }
@@ -117,13 +126,49 @@ export class ImportManager {
     }
   }
 
-  private async deleteWorkspace(workspace: IStorageConfig_Workspace, wholeDom: HTMLDivElement) {
+  private async exportWorkspaceByGui(filePath: string, wholeDom: HTMLDivElement) {
+    try {
+      this.showLoading(wholeDom, true);
+      const config = await this.storage.getConfig();
+      await this.exportWorkspace(config.workspaces[filePath]);
+      this.refreshGui(config, wholeDom);
+      this.showLoading(wholeDom, false);
+    } catch (ex) {
+      this.showLoading(wholeDom, false);
+      throw ex;
+    }
+  }
+
+  public async exportWorkspace(workspaceConfig: IStorage.IWorkspace) {
+    const oneLineJson = await this.context.data.export.insomnia({
+      includePrivate: false,
+      format: "json",
+      workspace: {
+        _id: workspaceConfig.data._id,
+        created: workspaceConfig.data.created,
+        description: workspaceConfig.data.description,
+        modified: workspaceConfig.data.modified,
+        name: workspaceConfig.data.name,
+        parentId: workspaceConfig.data.parentId,
+        scope: workspaceConfig.data.scope,
+        // This is only difference
+        type: workspaceConfig.data._type,
+      },
+    });
+    const normalizer = new FileNormalizer();
+    const jsonObject = normalizer.normalizeExport(oneLineJson);
+    const workspaceSaver = new WorkspaceSaver(workspaceConfig.path);
+    await workspaceSaver.exportOneFile(jsonObject);
+    await workspaceSaver.exportMultipleFiles(jsonObject);
+  }
+
+  private async deleteWorkspace(workspace: IStorage.IWorkspace, wholeDom: HTMLDivElement) {
     try {
       let workSpaceName: string;
       try {
         workSpaceName = await this.context.app.prompt("Do you really want to remove this workspace from list? Workspace will not be delete from Insomnia.", {
           cancelable: true,
-          defaultValue: workspace.name,
+          defaultValue: workspace.data.name,
           submitName: "Yes, delete it",
           label: "Workspace",
         });
@@ -135,7 +180,7 @@ export class ImportManager {
       }
 
       const config = await this.storage.getConfig();
-      workspace = Object.values(config.workspaces).find((w) => w.name === workSpaceName.trim());
+      workspace = Object.values(config.workspaces).find((w) => w.data.name === workSpaceName.trim());
       this.showLoading(wholeDom, true);
       delete config.workspaces[workspace.path];
       await this.storage.setConfig(config);
@@ -148,21 +193,16 @@ export class ImportManager {
   }
 
   public async importWorkspace(filePath: string): Promise<void> {
-    console.log("loading");
     const workspaceSaver = new WorkspaceSaver(filePath);
     let json = await workspaceSaver.loadWorkspaceFile();
-    let workspace = json.resources?.filter((r) => r._type == "workspace")[0] as IInsomniaFileWorkspace;
+    let workspace: InsomniaFile.IWorkspaceResource | undefined = json.resources?.filter((r) => InsomniaFile.isWorkspaceResource(r))[0] as any;
     await this.context.data.import.raw(JSON.stringify(json));
-    workspace ||= {
-      name: "Unknown name",
-    };
     const config = await this.storage.getConfig();
     config.workspaces[filePath] = {
-      name: workspace.name,
       path: filePath,
+      data: workspace,
     };
     await this.storage.setConfig(config);
-    console.log("laoded", config);
   }
 
   private showLoading(wholeDom: HTMLDivElement, on: boolean): void {
