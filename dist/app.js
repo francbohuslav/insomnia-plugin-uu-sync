@@ -26,7 +26,7 @@ class App {
             if (!workspaceConfig) {
                 return;
             }
-            const importManager = new import_manager_1.ImportManager(context, models);
+            const importManager = new import_manager_1.ImportManager(context);
             yield importManager.exportWorkspace(workspaceConfig);
         });
     }
@@ -37,13 +37,13 @@ class App {
             if (!workspaceConfig) {
                 return;
             }
-            const importManager = new import_manager_1.ImportManager(context, models);
+            const importManager = new import_manager_1.ImportManager(context);
             yield importManager.importWorkspace(workspaceConfig.path);
         });
     }
-    showImportManager(context, models) {
+    showImportManager(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            const node = yield new import_manager_1.ImportManager(context, models).getManagerDom();
+            const node = yield new import_manager_1.ImportManager(context).getManagerDom();
             context.app.dialog("Import manager", node, {
                 wide: true,
                 tall: true,

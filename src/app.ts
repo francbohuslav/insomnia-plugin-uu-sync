@@ -15,7 +15,7 @@ export default class App {
     if (!workspaceConfig) {
       return;
     }
-    const importManager = new ImportManager(context, models);
+    const importManager = new ImportManager(context);
     await importManager.exportWorkspace(workspaceConfig);
   }
 
@@ -25,12 +25,12 @@ export default class App {
     if (!workspaceConfig) {
       return;
     }
-    const importManager = new ImportManager(context, models);
+    const importManager = new ImportManager(context);
     await importManager.importWorkspace(workspaceConfig.path);
   }
 
-  public async showImportManager(context: Insomnia.IContext, models: Insomnia.IModels) {
-    const node = await new ImportManager(context, models).getManagerDom();
+  public async showImportManager(context: Insomnia.IContext) {
+    const node = await new ImportManager(context).getManagerDom();
     context.app.dialog("Import manager", node, {
       wide: true,
       tall: true,
