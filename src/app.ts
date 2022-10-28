@@ -43,7 +43,7 @@ export default class App {
       this.lastResponseJsonBody = {
         itemList: [
           {
-            Message: "run some request with response.itemList first",
+            Message: "run some request with array response first",
           },
         ],
       };

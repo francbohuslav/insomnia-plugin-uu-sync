@@ -63,7 +63,17 @@ class JsonToTable {
             "<div class='jsonToTable'>",
         ];
         content.push("<table>");
-        const items = json.itemList || [];
+        let items = [];
+        if (Array.isArray(json)) {
+            items = json;
+        }
+        else if (json.itemList) {
+            items = json.itemList;
+        }
+        else if (json !== null && typeof json === "object") {
+            const firstArrayValue = Object.values(json).find((v) => Array.isArray(v));
+            items = firstArrayValue || [];
+        }
         if (items.length) {
             const keys = Object.keys(items[0]);
             content.push(`<tr><th>Detail</th>${keys.map((key) => `<th>${key}</th>`).join("")}</tr>`);

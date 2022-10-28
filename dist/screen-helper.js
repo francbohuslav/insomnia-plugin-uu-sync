@@ -17,7 +17,7 @@ class ScreenHelper {
     }
     static askNewWorkspaceFilePath(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield context.app.alert("Choose Insomnia workspace file", `Choose source file of new workspace. Confirm rewrite question.`);
+            yield context.app.alert("Choose Insomnia workspace file", `Choose source file of new workspace.\nConfirm rewrite question.`);
             const path = yield context.app.showSaveDialog();
             return ScreenHelper.normalizePath(path);
         });

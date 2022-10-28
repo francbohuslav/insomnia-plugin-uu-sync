@@ -6,7 +6,7 @@ export default class ScreenHelper {
   }
 
   public static async askNewWorkspaceFilePath(context: Insomnia.IContext) {
-    await context.app.alert("Choose Insomnia workspace file", `Choose source file of new workspace. Confirm rewrite question.`);
+    await context.app.alert("Choose Insomnia workspace file", `Choose source file of new workspace.\nConfirm rewrite question.`);
     const path = await context.app.showSaveDialog();
     return ScreenHelper.normalizePath(path);
   }
