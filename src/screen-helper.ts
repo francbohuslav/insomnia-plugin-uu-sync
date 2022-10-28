@@ -11,6 +11,27 @@ export default class ScreenHelper {
     return ScreenHelper.normalizePath(path);
   }
 
+  public static async catchErrors(context: Insomnia.IContext, action: () => Promise<void>, finalAction?: () => Promise<void> | void) {
+    try {
+      await action();
+      const res = finalAction();
+      if (res instanceof Promise) {
+        await res;
+      }
+    } catch (ex) {
+      const res = finalAction();
+      if (res instanceof Promise) {
+        await res;
+      }
+      console.error(ex);
+      if (ex.constructor.name === "AppError") {
+        await ScreenHelper.alertError(context, ex.message);
+      } else {
+        await ScreenHelper.alertError(context, ex.message + "\nMore in debug console");
+      }
+    }
+  }
+
   private static normalizePath(path: string): string {
     if (path == null || path == "undefined") {
       return null;

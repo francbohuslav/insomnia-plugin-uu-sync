@@ -22,6 +22,30 @@ class ScreenHelper {
             return ScreenHelper.normalizePath(path);
         });
     }
+    static catchErrors(context, action, finalAction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield action();
+                const res = finalAction();
+                if (res instanceof Promise) {
+                    yield res;
+                }
+            }
+            catch (ex) {
+                const res = finalAction();
+                if (res instanceof Promise) {
+                    yield res;
+                }
+                console.error(ex);
+                if (ex.constructor.name === "AppError") {
+                    yield ScreenHelper.alertError(context, ex.message);
+                }
+                else {
+                    yield ScreenHelper.alertError(context, ex.message + "\nMore in debug console");
+                }
+            }
+        });
+    }
     static normalizePath(path) {
         if (path == null || path == "undefined") {
             return null;

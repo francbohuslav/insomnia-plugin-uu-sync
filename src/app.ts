@@ -84,10 +84,6 @@ export default class App {
     }
   }
 
-  public getConnectionFileLabelString(): string {
-    return "uuSync - Connect with file";
-  }
-
   private async verifyConfig(storage: InsomniaStorage, context: Insomnia.IContext, workspaceName: string): Promise<IStorage.IWorkspace> {
     const config = await storage.getConfig();
     const workspaceConfig = Object.values(config.workspaces).find((w) => w.data.name === workspaceName);

@@ -1,3 +1,4 @@
+import { AppError } from "./app-error";
 import FileNormalizer from "./file-normalizer";
 import { InsomniaFile } from "./insomnia-file";
 import { Insomnia } from "./insomnia-interfaces";
@@ -74,7 +75,7 @@ export class ImportManager {
 
     td = document.createElement("td");
     const commonPath = this.getCommonPath(workspaces);
-    td.innerHTML = commonPath;
+    td.innerHTML = commonPath ? commonPath + "..." : "";
     tr.appendChild(td);
 
     td = document.createElement("td");
@@ -83,9 +84,20 @@ export class ImportManager {
     button.classList.add("bg-info");
     button.innerText = "Import all";
     button.addEventListener("click", async () => {
-      for (const workspace of workspaces) {
-        await this.importWorkspaceByGui(workspace.path, wholeDom, workspace.data.name);
-      }
+      ScreenHelper.catchErrors(
+        this.context,
+        async () => {
+          for (const workspace of workspaces) {
+            this.showLoading(wholeDom, true, workspace.data.name);
+            await this.importWorkspace(workspace.path);
+          }
+          const config = await this.storage.getConfig();
+          this.refreshGui(config, wholeDom);
+        },
+        () => {
+          this.showLoading(wholeDom, false);
+        }
+      );
     });
     td.appendChild(button);
 
@@ -93,7 +105,26 @@ export class ImportManager {
     button.classList.add("tag");
     button.classList.add("bg-info");
     button.innerText = "Export all";
-    button.addEventListener("click", () => Promise.all([...workspaces].map((workspace) => this.exportWorkspaceByGui(workspace, wholeDom))));
+    button.addEventListener("click", () => {
+      ScreenHelper.catchErrors(
+        this.context,
+        async () => {
+          this.showLoading(wholeDom, true, "0%");
+          let counter = 0;
+          const config = await this.storage.getConfig();
+          await Promise.all(
+            [...workspaces].map((workspace) =>
+              this.exportWorkspace(workspace).then(() => {
+                counter++;
+                this.showLoading(wholeDom, true, ((counter / workspaces.length) * 100).toFixed(0) + "%");
+              })
+            )
+          );
+          this.refreshGui(config, wholeDom);
+        },
+        () => this.showLoading(wholeDom, false)
+      );
+    });
     td.appendChild(button);
     tr.appendChild(td);
 
@@ -107,7 +138,7 @@ export class ImportManager {
       tr.appendChild(td);
 
       td = document.createElement("td");
-      td.innerText = workspace.path.slice(commonPath.length);
+      td.innerText = (commonPath.length > 0 ? "..." : "") + workspace.path.slice(commonPath.length);
       tr.appendChild(td);
 
       td = document.createElement("td");
@@ -129,7 +160,7 @@ export class ImportManager {
       button.classList.add("tag");
       button.classList.add("bg-danger");
       button.innerText = "Delete";
-      button.addEventListener("click", () => this.deleteWorkspace(workspace, wholeDom));
+      button.addEventListener("click", () => this.deleteWorkspaceByGui(workspace, wholeDom));
       td.appendChild(button);
       tr.appendChild(td);
 
@@ -145,30 +176,34 @@ export class ImportManager {
     await this.importWorkspaceByGui(filePath, wholeDom);
   }
 
-  private async importWorkspaceByGui(filePath: string, wholeDom: HTMLDivElement, progress?: string) {
-    try {
-      this.showLoading(wholeDom, true, progress);
-      await this.importWorkspace(filePath);
-      const config = await this.storage.getConfig();
-      this.refreshGui(config, wholeDom);
-      this.showLoading(wholeDom, false);
-    } catch (ex) {
-      this.showLoading(wholeDom, false);
-      throw ex;
-    }
+  private importWorkspaceByGui(filePath: string, wholeDom: HTMLDivElement, progress?: string) {
+    return ScreenHelper.catchErrors(
+      this.context,
+      async () => {
+        this.showLoading(wholeDom, true, progress);
+        await this.importWorkspace(filePath);
+        const config = await this.storage.getConfig();
+        this.refreshGui(config, wholeDom);
+      },
+      () => {
+        this.showLoading(wholeDom, false);
+      }
+    );
   }
 
-  private async exportWorkspaceByGui(workspace: IStorage.IWorkspace, wholeDom: HTMLDivElement, progress?: string) {
-    try {
-      this.showLoading(wholeDom, true, progress);
-      const config = await this.storage.getConfig();
-      await this.exportWorkspace(workspace);
-      this.refreshGui(config, wholeDom);
-      this.showLoading(wholeDom, false);
-    } catch (ex) {
-      this.showLoading(wholeDom, false);
-      throw ex;
-    }
+  private exportWorkspaceByGui(workspace: IStorage.IWorkspace, wholeDom: HTMLDivElement, progress?: string) {
+    return ScreenHelper.catchErrors(
+      this.context,
+      async () => {
+        this.showLoading(wholeDom, true, progress);
+        const config = await this.storage.getConfig();
+        await this.exportWorkspace(workspace);
+        this.refreshGui(config, wholeDom);
+      },
+      () => {
+        this.showLoading(wholeDom, false);
+      }
+    );
   }
 
   public async exportWorkspace(workspaceConfig: IStorage.IWorkspace) {
@@ -194,47 +229,58 @@ export class ImportManager {
     await workspaceSaver.exportMultipleFiles(jsonObject);
   }
 
-  private async deleteWorkspace(workspace: IStorage.IWorkspace, wholeDom: HTMLDivElement) {
-    try {
-      let workSpaceName: string;
-      try {
-        workSpaceName = await this.context.app.prompt("Do you really want to remove this workspace from list? Workspace will not be delete from Insomnia.", {
-          cancelable: true,
-          defaultValue: workspace.data.name,
-          submitName: "Yes, delete it",
-          label: "Workspace",
-        });
-      } catch (ex) {
-        console.error("Dialog canceled", ex);
-      }
-      if (!workSpaceName) {
-        return;
-      }
+  private async deleteWorkspaceByGui(workspace: IStorage.IWorkspace, wholeDom: HTMLDivElement) {
+    return ScreenHelper.catchErrors(
+      this.context,
+      async () => {
+        let workSpaceName: string;
+        try {
+          workSpaceName = await this.context.app.prompt("Do you really want to remove this workspace from list? Workspace will not be delete from Insomnia.", {
+            cancelable: true,
+            defaultValue: workspace.data.name,
+            submitName: "Yes, delete it",
+            label: "Workspace",
+          });
+        } catch (ex) {
+          console.error("Dialog canceled", ex);
+        }
+        if (!workSpaceName) {
+          return;
+        }
 
-      const config = await this.storage.getConfig();
-      workspace = Object.values(config.workspaces).find((w) => w.data.name === workSpaceName.trim());
-      this.showLoading(wholeDom, true);
-      delete config.workspaces[workspace.path];
-      await this.storage.setConfig(config);
-      this.refreshGui(config, wholeDom);
-      this.showLoading(wholeDom, false);
-    } catch (ex) {
-      this.showLoading(wholeDom, false);
-      throw ex;
-    }
+        const config = await this.storage.getConfig();
+        workspace = Object.values(config.workspaces).find((w) => w.data.name === workSpaceName.trim());
+        this.showLoading(wholeDom, true);
+        delete config.workspaces[workspace.path];
+        await this.storage.setConfig(config);
+        this.refreshGui(config, wholeDom);
+      },
+      () => {
+        this.showLoading(wholeDom, false);
+      }
+    );
   }
 
   public async importWorkspace(filePath: string): Promise<void> {
     const workspaceSaver = new WorkspaceSaver(filePath);
     let json = await workspaceSaver.loadWorkspaceFile();
     let workspace: InsomniaFile.IWorkspaceResource | undefined = json.resources?.filter((r) => InsomniaFile.isWorkspaceResource(r))[0] as any;
-    await this.context.data.import.raw(JSON.stringify(json));
     const config = await this.storage.getConfig();
+    this.checkWorkspaceUniqueness(config, workspace);
+    await this.context.data.import.raw(JSON.stringify(json));
     config.workspaces[filePath] = {
       path: filePath,
       data: workspace,
     };
     await this.storage.setConfig(config);
+  }
+
+  private checkWorkspaceUniqueness(config: IStorage.IConfig, workspace: InsomniaFile.IWorkspaceResource) {
+    const existingWorkspace = Object.values(config.workspaces).find((w) => w.data._id === workspace._id);
+    if (existingWorkspace) {
+      throw new AppError(`This workspace already exists in different path ${existingWorkspace.path}.\nImport canceled, to avoid unexpected result. Different workspaces must use unique id. 
+      If some workspace is based of existing one, than must be duplicated by Insomnia to have different unique id.\nIf you really want import this workspace, thus delete existing one from Insomnia and from this import manager.`);
+    }
   }
 
   private showLoading(wholeDom: HTMLDivElement, on: boolean, progress?: string): void {

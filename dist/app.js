@@ -97,9 +97,6 @@ class App {
             }
         });
     }
-    getConnectionFileLabelString() {
-        return "uuSync - Connect with file";
-    }
     verifyConfig(storage, context, workspaceName) {
         return __awaiter(this, void 0, void 0, function* () {
             const config = yield storage.getConfig();

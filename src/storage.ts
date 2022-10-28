@@ -5,6 +5,7 @@ const configKey = "insomnia-plugin-uu-sync-config";
 
 export default class Storage {
   constructor(private context: Insomnia.IContext) {}
+
   public async getConfig(): Promise<IStorage.IConfig> {
     const configAsString = await this.context.store.getItem(configKey);
     let config: IStorage.IConfig = {
