@@ -40,13 +40,31 @@ export const Page = (props: IPageProps) => {
   const workspaces = config?.workspaces ? Object.values(config.workspaces) : [];
   workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
   const commonPath = workspaces.length > 0 ? getCommonPath(workspaces) : "";
+  const tabs = [
+    {
+      name: "My workspaces",
+      active: true,
+    },
+    {
+      name: "IDS",
+      active: false,
+    },
+  ];
+
   return (
     <div>
-      <div className="buttons">
-        <button className="tag bg-info" onClick={() => withReload(() => props.importer.newImportWizard(setProgress))}>
-          Add new workspace
-        </button>
-        {workspaces.length > 0 && (
+      {workspaces.length > 0 && (
+        <>
+          <div className="tabs">
+            {tabs.map((tab) => (
+              <div className={"tab tag " + (tab.active ? "bg-info" : "bg-default")} title="Double click to edit">
+                {tab.name}
+              </div>
+            ))}
+            <div className="tab tag bg-default" title="Create new group">
+              +
+            </div>
+          </div>
           <table>
             <thead>
               <tr>
@@ -92,8 +110,15 @@ export const Page = (props: IPageProps) => {
               ))}
             </tbody>
           </table>
-        )}
-      </div>
+          <button
+            className="tag bg-info"
+            style={{ marginTop: "1em", marginLeft: "20px" }}
+            onClick={() => withReload(() => props.importer.newImportWizard(setProgress))}
+          >
+            Add new workspace
+          </button>
+        </>
+      )}
       {overlay.visible && <div className="overlay">Working, wait... {overlay.progress}</div>}
     </div>
   );

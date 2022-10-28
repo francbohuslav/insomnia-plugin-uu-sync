@@ -29,9 +29,6 @@ export class ImportManager {
     .import-manager td, .import-manager th {
       padding: 4px 20px;
     }
-    .import-manager .buttons{
-      margin-bottom: 0.5em;
-    }
     .import-manager .overlay{
       background: rgb(255,255,255,0.7);
       position: absolute;
@@ -44,6 +41,18 @@ export class ImportManager {
       align-items: center;
       font-size: 30px;
       min-height: 200px;
+    }
+    .import-manager .tabs {
+      border-bottom: 3px solid #005b9e;
+      margin-top: 1em;
+      padding-left: 1em;
+    }
+    .import-manager .tab {
+      font-size: 118%;
+      padding: 10px 20px;
+    }
+    .import-manager .tab.bg-info {
+      font-weight: bold;
     }
     </style>
     `;

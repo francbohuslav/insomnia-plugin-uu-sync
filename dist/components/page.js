@@ -55,10 +55,22 @@ const Page = (props) => {
     const workspaces = (config === null || config === void 0 ? void 0 : config.workspaces) ? Object.values(config.workspaces) : [];
     workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
     const commonPath = workspaces.length > 0 ? getCommonPath(workspaces) : "";
+    const tabs = [
+        {
+            name: "My workspaces",
+            active: true,
+        },
+        {
+            name: "IDS",
+            active: false,
+        },
+    ];
     return (react_1.default.createElement("div", null,
-        react_1.default.createElement("div", { className: "buttons" },
-            react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.newImportWizard(setProgress)) }, "Add new workspace"),
-            workspaces.length > 0 && (react_1.default.createElement("table", null,
+        workspaces.length > 0 && (react_1.default.createElement(react_1.default.Fragment, null,
+            react_1.default.createElement("div", { className: "tabs" },
+                tabs.map((tab) => (react_1.default.createElement("div", { className: "tab tag " + (tab.active ? "bg-info" : "bg-default"), title: "Double click to edit" }, tab.name))),
+                react_1.default.createElement("div", { className: "tab tag bg-default", title: "Create new group" }, "+")),
+            react_1.default.createElement("table", null,
                 react_1.default.createElement("thead", null,
                     react_1.default.createElement("tr", null,
                         react_1.default.createElement("th", null, "Workspace"),
@@ -82,7 +94,8 @@ const Page = (props) => {
                         react_1.default.createElement("td", null,
                             react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.importWorkspaceByGui(workspace.path, setProgress)) }, "Import"),
                             react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.exportWorkspaceByGui(workspace, setProgress)) }, "Export"),
-                            react_1.default.createElement("button", { className: "tag bg-danger", onClick: () => withReload(() => props.importer.deleteWorkspaceByGui(workspace, setProgress)) }, "Delete"))))))))),
+                            react_1.default.createElement("button", { className: "tag bg-danger", onClick: () => withReload(() => props.importer.deleteWorkspaceByGui(workspace, setProgress)) }, "Delete"))))))),
+            react_1.default.createElement("button", { className: "tag bg-info", style: { marginTop: "1em", marginLeft: "20px" }, onClick: () => withReload(() => props.importer.newImportWizard(setProgress)) }, "Add new workspace"))),
         overlay.visible && react_1.default.createElement("div", { className: "overlay" },
             "Working, wait... ",
             overlay.progress)));
