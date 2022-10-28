@@ -54,6 +54,9 @@ export class ImportManager {
     .import-manager .tab.bg-info {
       font-weight: bold;
     }
+    .import-manager button {
+      cursor: pointer;
+    }
     </style>
     `;
 
@@ -83,13 +86,13 @@ export class ImportManager {
     );
   }
 
-  public importAll(workspaces: IStorage.IWorkspace[], setOverlay: IOverlayHandler) {
+  public importAll(workspaces: IStorage.IWorkspace[], setOverlay: IOverlayHandler, tabId: number) {
     return ScreenHelper.catchErrors(
       this.context,
       async () => {
         for (const workspace of workspaces) {
           setOverlay(true, workspace.data.name);
-          await this.importWorkspace(workspace.path);
+          await this.importWorkspace(workspace.path, tabId);
         }
       },
       () => {
@@ -98,20 +101,20 @@ export class ImportManager {
     );
   }
 
-  public async newImportWizard(setOverlay: IOverlayHandler) {
+  public async newImportWizard(setOverlay: IOverlayHandler, tabId: number) {
     const filePath = await ScreenHelper.askNewWorkspaceFilePath(this.context);
     if (filePath == null) {
       return;
     }
-    await this.importWorkspaceByGui(filePath, setOverlay);
+    await this.importWorkspaceByGui(filePath, setOverlay, tabId);
   }
 
-  public importWorkspaceByGui(filePath: string, setOverlay: IOverlayHandler, progress?: string) {
+  public importWorkspaceByGui(filePath: string, setOverlay: IOverlayHandler, tabId: number, progress?: string) {
     return ScreenHelper.catchErrors(
       this.context,
       async () => {
         setOverlay(true, progress);
-        await this.importWorkspace(filePath);
+        await this.importWorkspace(filePath, tabId);
       },
       () => {
         setOverlay();
@@ -186,7 +189,7 @@ export class ImportManager {
     );
   }
 
-  public async importWorkspace(filePath: string): Promise<void> {
+  public async importWorkspace(filePath: string, tabId: number): Promise<void> {
     const workspaceSaver = new WorkspaceSaver(filePath);
     let json = await workspaceSaver.loadWorkspaceFile();
     let workspace: InsomniaFile.IWorkspaceResource | undefined = json.resources?.filter((r) => InsomniaFile.isWorkspaceResource(r))[0] as any;
@@ -194,6 +197,7 @@ export class ImportManager {
     this.checkWorkspaceUniqueness(config, workspace, filePath);
     await this.context.data.import.raw(JSON.stringify(json));
     config.workspaces[filePath] = {
+      tabId,
       path: filePath,
       data: workspace,
     };

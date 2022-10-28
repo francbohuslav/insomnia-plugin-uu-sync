@@ -36,40 +36,102 @@ const react_1 = __importStar(require("react"));
 const storage_1 = __importDefault(require("../storage"));
 const Page = (props) => {
     const storage = new storage_1.default(props.context);
-    const [reload, setReload] = react_1.useState(0);
     const [config, setConfig] = react_1.useState();
+    const [activeTabId, setActiveTabId] = react_1.useState(undefined);
     const [overlay, setOverlay] = react_1.useState({
         visible: false,
         progress: "",
     });
     react_1.useEffect(() => {
-        storage.getConfig().then(setConfig);
-    }, [reload]);
+        reloadConfig();
+    }, []);
     const setProgress = (visible, progress) => {
         setOverlay((overlay) => (Object.assign(Object.assign({}, overlay), { visible, progress })));
     };
     const withReload = (action) => __awaiter(void 0, void 0, void 0, function* () {
         yield action();
-        setReload((reload) => reload + 1);
+        yield reloadConfig();
     });
-    const workspaces = (config === null || config === void 0 ? void 0 : config.workspaces) ? Object.values(config.workspaces) : [];
+    const reloadConfig = () => __awaiter(void 0, void 0, void 0, function* () {
+        const config = yield storage.getConfig();
+        setConfig(config);
+        if (activeTabId === undefined) {
+            setActiveTabId(config.tabs[0].id);
+        }
+    });
+    const showRenameTabDialog = (tab) => __awaiter(void 0, void 0, void 0, function* () {
+        let tabName = "";
+        try {
+            tabName = yield props.context.app.prompt("Name of group. To remove group with its workspaces, delete name and confirm.", {
+                cancelable: true,
+                defaultValue: tab.name,
+                submitName: "Ok",
+                label: "Group name",
+            });
+        }
+        catch (ex) {
+            // canceled
+            return;
+        }
+        if (!tabName) {
+            // Delete tab
+            if (config.tabs.length === 1) {
+                props.context.app.alert("Error", "Sorry bro, but last group can not be deleted.");
+            }
+            else {
+                config.tabs.splice(config.tabs.findIndex((t) => t.id === tab.id), 1);
+                const newWorkspaces = {};
+                Object.values(config.workspaces)
+                    .filter((w) => w.tabId !== tab.id)
+                    .forEach((w) => {
+                    newWorkspaces[w.path] = w;
+                });
+                config.workspaces = newWorkspaces;
+                yield storage.setConfig(config);
+                yield reloadConfig();
+                setActiveTabId(config.tabs[0].id);
+            }
+        }
+        else {
+            tab.name = tabName;
+            yield storage.setConfig(config);
+            yield reloadConfig();
+        }
+    });
+    const showCreateTabDialog = () => __awaiter(void 0, void 0, void 0, function* () {
+        let tabName = "";
+        try {
+            tabName = yield props.context.app.prompt("Create new group", {
+                cancelable: true,
+                defaultValue: "",
+                submitName: "Create group",
+                label: "Group name",
+            });
+        }
+        catch (ex) {
+            // canceled
+            return;
+        }
+        if (tabName == "") {
+            return;
+        }
+        const newTab = {
+            id: Date.now(),
+            name: tabName,
+        };
+        config.tabs.push(newTab);
+        yield storage.setConfig(config);
+        yield reloadConfig();
+        setActiveTabId(newTab.id);
+    });
+    const workspaces = (config === null || config === void 0 ? void 0 : config.workspaces) ? Object.values(config.workspaces).filter((w) => w.tabId === activeTabId) : [];
     workspaces.sort((a, b) => a.data.name.localeCompare(b.data.name));
-    const commonPath = workspaces.length > 0 ? getCommonPath(workspaces) : "";
-    const tabs = [
-        {
-            name: "My workspaces",
-            active: true,
-        },
-        {
-            name: "IDS",
-            active: false,
-        },
-    ];
+    const commonPath = workspaces.length > 1 ? getCommonPath(workspaces) : "";
     return (react_1.default.createElement("div", null,
-        workspaces.length > 0 && (react_1.default.createElement(react_1.default.Fragment, null,
+        activeTabId > 0 && (react_1.default.createElement(react_1.default.Fragment, null,
             react_1.default.createElement("div", { className: "tabs" },
-                tabs.map((tab) => (react_1.default.createElement("div", { className: "tab tag " + (tab.active ? "bg-info" : "bg-default"), title: "Double click to edit" }, tab.name))),
-                react_1.default.createElement("div", { className: "tab tag bg-default", title: "Create new group" }, "+")),
+                config.tabs.map((tab) => (react_1.default.createElement("button", { key: tab.id, className: "tab tag " + (tab.id === activeTabId ? "bg-info" : "bg-default"), title: "Double click to edit", onClick: () => setActiveTabId(tab.id), onDoubleClick: () => showRenameTabDialog(tab) }, tab.name))),
+                react_1.default.createElement("button", { className: "tab tag bg-default", title: "Create new group", onClick: () => showCreateTabDialog() }, "+")),
             react_1.default.createElement("table", null,
                 react_1.default.createElement("thead", null,
                     react_1.default.createElement("tr", null,
@@ -77,14 +139,14 @@ const Page = (props) => {
                         react_1.default.createElement("th", null, "Path"),
                         react_1.default.createElement("th", null, "Actions"))),
                 react_1.default.createElement("tbody", null,
-                    react_1.default.createElement("tr", null,
+                    workspaces.length > 1 && (react_1.default.createElement("tr", null,
                         react_1.default.createElement("td", null,
                             workspaces.length,
                             "x"),
                         react_1.default.createElement("td", null, commonPath ? commonPath + "..." : ""),
                         react_1.default.createElement("td", null,
-                            react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.importAll(workspaces, setProgress)) }, "Import all"),
-                            react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.exportAll(workspaces, setProgress)) }, "Export all"))),
+                            react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.importAll(workspaces, setProgress, activeTabId)) }, "Import all"),
+                            react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.exportAll(workspaces, setProgress)) }, "Export all")))),
                     workspaces.map((workspace, i) => (react_1.default.createElement("tr", { key: i },
                         react_1.default.createElement("td", null,
                             react_1.default.createElement("strong", null, workspace.data.name)),
@@ -92,10 +154,10 @@ const Page = (props) => {
                             commonPath.length > 0 ? "..." : "",
                             workspace.path.slice(commonPath.length)),
                         react_1.default.createElement("td", null,
-                            react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.importWorkspaceByGui(workspace.path, setProgress)) }, "Import"),
+                            react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.importWorkspaceByGui(workspace.path, setProgress, activeTabId)) }, "Import"),
                             react_1.default.createElement("button", { className: "tag bg-info", onClick: () => withReload(() => props.importer.exportWorkspaceByGui(workspace, setProgress)) }, "Export"),
                             react_1.default.createElement("button", { className: "tag bg-danger", onClick: () => withReload(() => props.importer.deleteWorkspaceByGui(workspace, setProgress)) }, "Delete"))))))),
-            react_1.default.createElement("button", { className: "tag bg-info", style: { marginTop: "1em", marginLeft: "20px" }, onClick: () => withReload(() => props.importer.newImportWizard(setProgress)) }, "Add new workspace"))),
+            react_1.default.createElement("button", { className: "tag bg-info", style: { marginTop: "1em", marginLeft: "20px" }, onClick: () => withReload(() => props.importer.newImportWizard(setProgress, activeTabId)) }, "Add new workspace"))),
         overlay.visible && react_1.default.createElement("div", { className: "overlay" },
             "Working, wait... ",
             overlay.progress)));

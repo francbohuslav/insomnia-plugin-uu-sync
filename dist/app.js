@@ -38,7 +38,7 @@ class App {
                 return;
             }
             const importManager = new import_manager_1.ImportManager(context);
-            yield importManager.importWorkspace(workspaceConfig.path);
+            yield importManager.importWorkspace(workspaceConfig.path, workspaceConfig.tabId);
         });
     }
     showImportManager(context) {

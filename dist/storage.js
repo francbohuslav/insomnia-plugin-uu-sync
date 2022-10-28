@@ -19,6 +19,7 @@ class Storage {
             const configAsString = yield this.context.store.getItem(configKey);
             let config = {
                 workspaces: {},
+                tabs: [],
             };
             try {
                 config = JSON.parse(configAsString);
@@ -29,10 +30,24 @@ class Storage {
             if (!config) {
                 config = {
                     workspaces: {},
+                    tabs: [],
                 };
             }
             if (!config.workspaces) {
                 config.workspaces = {};
+            }
+            if (!config.tabs) {
+                config.tabs = [];
+            }
+            if (config.tabs.length === 0) {
+                const tab = {
+                    id: Date.now(),
+                    name: "My workspaces",
+                };
+                config.tabs.push(tab);
+                Object.values(config.workspaces).forEach((workspace) => {
+                    workspace.tabId = tab.id;
+                });
             }
             console.log("Loading", config);
             return config;

@@ -26,7 +26,7 @@ export default class App {
       return;
     }
     const importManager = new ImportManager(context);
-    await importManager.importWorkspace(workspaceConfig.path);
+    await importManager.importWorkspace(workspaceConfig.path, workspaceConfig.tabId);
   }
 
   public async showImportManager(context: Insomnia.IContext) {

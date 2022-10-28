@@ -66,6 +66,9 @@ class ImportManager {
     .import-manager .tab.bg-info {
       font-weight: bold;
     }
+    .import-manager button {
+      cursor: pointer;
+    }
     </style>
     `;
             const reactDom = document.createElement("div");
@@ -85,29 +88,29 @@ class ImportManager {
             })));
         }), () => setOverlay());
     }
-    importAll(workspaces, setOverlay) {
+    importAll(workspaces, setOverlay, tabId) {
         return screen_helper_1.default.catchErrors(this.context, () => __awaiter(this, void 0, void 0, function* () {
             for (const workspace of workspaces) {
                 setOverlay(true, workspace.data.name);
-                yield this.importWorkspace(workspace.path);
+                yield this.importWorkspace(workspace.path, tabId);
             }
         }), () => {
             setOverlay();
         });
     }
-    newImportWizard(setOverlay) {
+    newImportWizard(setOverlay, tabId) {
         return __awaiter(this, void 0, void 0, function* () {
             const filePath = yield screen_helper_1.default.askNewWorkspaceFilePath(this.context);
             if (filePath == null) {
                 return;
             }
-            yield this.importWorkspaceByGui(filePath, setOverlay);
+            yield this.importWorkspaceByGui(filePath, setOverlay, tabId);
         });
     }
-    importWorkspaceByGui(filePath, setOverlay, progress) {
+    importWorkspaceByGui(filePath, setOverlay, tabId, progress) {
         return screen_helper_1.default.catchErrors(this.context, () => __awaiter(this, void 0, void 0, function* () {
             setOverlay(true, progress);
-            yield this.importWorkspace(filePath);
+            yield this.importWorkspace(filePath, tabId);
         }), () => {
             setOverlay();
         });
@@ -172,7 +175,7 @@ class ImportManager {
             });
         });
     }
-    importWorkspace(filePath) {
+    importWorkspace(filePath, tabId) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
             const workspaceSaver = new workspace_saver_1.default(filePath);
@@ -182,6 +185,7 @@ class ImportManager {
             this.checkWorkspaceUniqueness(config, workspace, filePath);
             yield this.context.data.import.raw(JSON.stringify(json));
             config.workspaces[filePath] = {
+                tabId,
                 path: filePath,
                 data: workspace,
             };

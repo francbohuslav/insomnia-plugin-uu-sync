@@ -10,6 +10,7 @@ export default class Storage {
     const configAsString = await this.context.store.getItem(configKey);
     let config: IStorage.IConfig = {
       workspaces: {},
+      tabs: [],
     };
     try {
       config = JSON.parse(configAsString);
@@ -19,10 +20,24 @@ export default class Storage {
     if (!config) {
       config = {
         workspaces: {},
+        tabs: [],
       };
     }
     if (!config.workspaces) {
       config.workspaces = {};
+    }
+    if (!config.tabs) {
+      config.tabs = [];
+    }
+    if (config.tabs.length === 0) {
+      const tab = {
+        id: Date.now(),
+        name: "My workspaces",
+      };
+      config.tabs.push(tab);
+      Object.values(config.workspaces).forEach((workspace) => {
+        workspace.tabId = tab.id;
+      });
     }
     console.log("Loading", config);
     return config;
@@ -38,9 +53,15 @@ export default class Storage {
 export namespace IStorage {
   export interface IConfig {
     workspaces: { [path: string]: IWorkspace };
+    tabs: ITab[];
   }
   export interface IWorkspace {
+    tabId: number;
     path: string;
     data: InsomniaFile.IWorkspaceResource;
+  }
+  export interface ITab {
+    id: number;
+    name: string;
   }
 }
