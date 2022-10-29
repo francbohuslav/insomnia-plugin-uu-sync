@@ -23,8 +23,11 @@ export namespace Insomnia {
   }
   interface IStore {
     hasItem(key: string): Promise<boolean>;
-    getItem(key: string): Promise<string>;
     setItem(key: string, value: string): Promise<void>;
+    getItem(key: string): Promise<string | null>;
+    removeItem(key: string): Promise<void>;
+    clear(): Promise<void>;
+    all(): Promise<Array<{ key: string; value: string }>>;
   }
 
   interface IData {

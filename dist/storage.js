@@ -14,9 +14,18 @@ class Storage {
     constructor(context) {
         this.context = context;
     }
+    /**
+     * For testing purposes
+     */
+    clearStore() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.context.store.clear();
+        });
+    }
     getConfig() {
         return __awaiter(this, void 0, void 0, function* () {
             const configAsString = yield this.context.store.getItem(configKey);
+            let save = false;
             let config = {
                 workspaces: {},
                 tabs: [],
@@ -48,6 +57,10 @@ class Storage {
                 Object.values(config.workspaces).forEach((workspace) => {
                     workspace.tabId = tab.id;
                 });
+                save = true;
+            }
+            if (save) {
+                yield this.setConfig(config);
             }
             console.log("Loading", config);
             return config;

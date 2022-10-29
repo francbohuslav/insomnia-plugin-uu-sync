@@ -6,8 +6,16 @@ const configKey = "insomnia-plugin-uu-sync-config";
 export default class Storage {
   constructor(private context: Insomnia.IContext) {}
 
+  /**
+   * For testing purposes
+   */
+  public async clearStore(): Promise<void> {
+    await this.context.store.clear();
+  }
+
   public async getConfig(): Promise<IStorage.IConfig> {
     const configAsString = await this.context.store.getItem(configKey);
+    let save = false;
     let config: IStorage.IConfig = {
       workspaces: {},
       tabs: [],
@@ -38,6 +46,10 @@ export default class Storage {
       Object.values(config.workspaces).forEach((workspace) => {
         workspace.tabId = tab.id;
       });
+      save = true;
+    }
+    if (save) {
+      await this.setConfig(config);
     }
     console.log("Loading", config);
     return config;
