@@ -8,9 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JsonToTable = void 0;
-const promises_1 = require("fs/promises");
+const fs_1 = __importDefault(require("fs"));
+const writeFile = fs_1.default.promises.writeFile;
 class JsonToTable {
     getTableHtml(json) {
         const content = [
@@ -96,7 +100,7 @@ class JsonToTable {
     }
     saveToFile(filePath, content) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield promises_1.writeFile(filePath, content, { encoding: "utf-8" });
+            yield writeFile(filePath, content, { encoding: "utf-8" });
             var url = filePath;
             var start = process.platform == "darwin" ? "open" : process.platform == "win32" ? "start" : "xdg-open";
             require("child_process").exec(start + " " + url);

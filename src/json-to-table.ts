@@ -1,5 +1,6 @@
-import { writeFile } from "fs/promises";
+import fs from "fs";
 
+const writeFile = fs.promises.writeFile;
 export class JsonToTable {
   public getTableHtml(json: any): string {
     const content = [
