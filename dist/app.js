@@ -51,10 +51,10 @@ class App {
             });
         });
     }
-    showDataAsTable(context) {
+    showDataAsTable(context, lastResponseJsonBody) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.lastResponseJsonBody) {
-                this.lastResponseJsonBody = {
+            if (!lastResponseJsonBody) {
+                lastResponseJsonBody = {
                     itemList: [
                         {
                             Message: "run some request with array response first",
@@ -76,7 +76,7 @@ class App {
             }));
             whole.appendChild(link);
             const table = document.createElement("div");
-            const html = jsonToTable.getTableHtml(this.lastResponseJsonBody);
+            const html = jsonToTable.getTableHtml(lastResponseJsonBody);
             table.innerHTML = html;
             whole.appendChild(table);
             context.app.dialog("Response as table", whole, {
@@ -90,7 +90,19 @@ class App {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const resp = this.bufferToJsonObj(context.response.getBody());
-                this.lastResponseJsonBody = resp;
+                let button = document.querySelector(".show-as-table-button");
+                if (button) {
+                    button.remove();
+                }
+                button = document.createElement("button");
+                button.classList.add("show-as-table-button");
+                button.classList.add("tag");
+                button.classList.add("bg-info");
+                button.innerHTML = `<i class="fa fa-table"></i>&nbsp;Show as table`;
+                button.addEventListener("click", () => {
+                    this.showDataAsTable(context, resp);
+                });
+                document.querySelector(".response-pane  .pane__header > div:first-child").append(button);
             }
             catch (_a) {
                 // no-op

@@ -7,8 +7,6 @@ import ScreenHelper from "./screen-helper";
 import InsomniaStorage, { IStorage } from "./storage";
 
 export default class App {
-  lastResponseJsonBody: any;
-
   public async exportActualWorkspace(context: Insomnia.IContext, models: Insomnia.IModels) {
     const storage = new InsomniaStorage(context);
     const workspaceConfig = await this.verifyConfig(storage, context, models.workspace.name);
@@ -38,9 +36,9 @@ export default class App {
     });
   }
 
-  public async showDataAsTable(context: Insomnia.IContext) {
-    if (!this.lastResponseJsonBody) {
-      this.lastResponseJsonBody = {
+  public async showDataAsTable(context: Insomnia.IContext, lastResponseJsonBody: any) {
+    if (!lastResponseJsonBody) {
+      lastResponseJsonBody = {
         itemList: [
           {
             Message: "run some request with array response first",
@@ -64,7 +62,7 @@ export default class App {
     whole.appendChild(link);
 
     const table = document.createElement("div");
-    const html = jsonToTable.getTableHtml(this.lastResponseJsonBody);
+    const html = jsonToTable.getTableHtml(lastResponseJsonBody);
     table.innerHTML = html;
     whole.appendChild(table);
 
@@ -78,7 +76,19 @@ export default class App {
   public async processResponse(context: Insomnia.IContext): Promise<void> {
     try {
       const resp = this.bufferToJsonObj(context.response.getBody());
-      this.lastResponseJsonBody = resp;
+      let button: HTMLButtonElement = document.querySelector(".show-as-table-button");
+      if (button) {
+        button.remove();
+      }
+      button = document.createElement("button");
+      button.classList.add("show-as-table-button");
+      button.classList.add("tag");
+      button.classList.add("bg-info");
+      button.innerHTML = `<i class="fa fa-table"></i>&nbsp;Show as table`;
+      button.addEventListener("click", () => {
+        this.showDataAsTable(context, resp);
+      });
+      document.querySelector(".response-pane  .pane__header > div:first-child").append(button);
     } catch {
       // no-op
     }

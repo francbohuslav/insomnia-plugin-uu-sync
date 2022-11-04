@@ -18,11 +18,6 @@ module.exports.workspaceActions = [
     icon: "fa-list",
     action: app.showImportManager.bind(app),
   },
-  {
-    label: "Show response as table",
-    icon: "fa-table",
-    action: app.showDataAsTable.bind(app),
-  },
 ];
 
 module.exports.responseHooks = [app.processResponse.bind(app)];
