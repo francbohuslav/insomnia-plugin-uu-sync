@@ -1,6 +1,6 @@
 {
   "name": "insomnia-plugin-uu-sync",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "Bogan <franc.bohuslav@gmail.com>",
   "description": "Import manager and table viewer for Insomnia",
   "license": "MIT",

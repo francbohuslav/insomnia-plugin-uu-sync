@@ -1,6 +1,10 @@
 # Insomnia uuSync Plugin
 
-This plugin can...
+## Last changes
+
+- **1.0.3** - [Show as table button was moved to response panel](screens/2022-11-04-show-as-table.png "Table data viewer").
+
+## This plugin can...
 
 1. ... connect workspaces to its exported file path, import them, export them by import manager
 2. ... show response array as table
