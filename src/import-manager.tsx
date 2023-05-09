@@ -139,6 +139,7 @@ export class ImportManager {
     const oneLineJson = await this.context.data.export.insomnia({
       includePrivate: false,
       format: "json",
+      // Workspace parameter is not documented anymore, but still is used
       workspace: {
         _id: workspaceConfig.data._id,
         created: workspaceConfig.data.created,
@@ -195,7 +196,9 @@ export class ImportManager {
     let workspace: InsomniaFile.IWorkspaceResource | undefined = json.resources?.filter((r) => InsomniaFile.isWorkspaceResource(r))[0] as any;
     const config = await this.storage.getConfig();
     this.checkWorkspaceUniqueness(config, workspace, filePath);
-    await this.context.data.import.raw(JSON.stringify(json));
+    await this.context.data.import.raw(JSON.stringify(json), {
+      workspaceScope: "collection",
+    });
     config.workspaces[filePath] = {
       tabId,
       path: filePath,

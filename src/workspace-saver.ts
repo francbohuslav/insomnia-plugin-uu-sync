@@ -67,6 +67,9 @@ export default class WorkspaceSaver {
           const resourceId = this.getResourceIdFromIdWithName(resourceIdWithName as string);
           jsonObject.resources.push(await this.loadResource(resourceId));
         }
+        // Existence of ApiSpec (api_spec) implicates that document is design. But we need collection, so delete them.
+        // Same problem should be also in few lines above in orignal insmnomnia workspace file... but I am lazy to do that :-)
+        jsonObject.resources = jsonObject.resources.filter((r) => r._type !== "api_spec");
         return jsonObject;
       } catch (err) {
         throw new AppError(`Error during loading of file ${this.workspaceFile}\n${err}`, err);

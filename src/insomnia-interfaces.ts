@@ -7,19 +7,40 @@ export namespace Insomnia {
   }
 
   interface IApp {
+    getInfo(): { version: string; platform: string };
+    alert(title: string, message?: string): Promise<void>;
+
+    dialog(
+      title: string,
+      body: HTMLElement,
+      options?: {
+        onHide?: () => void;
+        tall?: boolean;
+        skinny?: boolean;
+        wide?: boolean;
+      }
+    ): void;
+
     prompt(
       title: string,
-      options: {
+      options?: {
         label?: string;
         defaultValue?: string;
         submitName?: string;
         cancelable?: boolean;
       }
     ): Promise<string>;
-    alert(title: string, message?: string): Promise<void>;
-    dialog(title: string, body: HTMLElement, options: any): void;
+
+    getPath(name: string): string;
+    showSaveDialog(options?: { defaultPath?: string }): Promise<string | null>;
+
+    clipboard: {
+      readText(): string;
+      writeText(text: string): void;
+      clear(): void;
+    };
+
     showGenericModalDialog(title: string, options: any): void;
-    showSaveDialog(params?: any): Promise<string>;
   }
   interface IStore {
     hasItem(key: string): Promise<boolean>;
@@ -32,10 +53,17 @@ export namespace Insomnia {
 
   interface IData {
     export: {
-      insomnia: (options: { includePrivate: false; format: "json"; workspace: IModelWorkspace }) => Promise<string>;
+      insomnia: (options: { includePrivate?: boolean; format: "json" | "yaml"; workspace?: IModelWorkspace }) => Promise<string>;
+      har(options?: { includePrivate?: boolean }): Promise<string>;
     };
     import: {
-      raw: (content: string) => Promise<void>;
+      raw: (
+        text: string,
+        options: {
+          workspaceId?: string;
+          workspaceScope?: "design" | "collection";
+        }
+      ) => Promise<void>;
     };
   }
 

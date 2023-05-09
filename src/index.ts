@@ -5,17 +5,17 @@ const app = new App();
 module.exports.workspaceActions = [
   {
     label: "uuSync - Export this workspace",
-    icon: "fa-download",
+    icon: "download",
     action: app.exportActualWorkspace.bind(app),
   },
   {
     label: "uuSync - Import this workspace",
-    icon: "fa-upload",
+    icon: "upload",
     action: app.importActualWorkspace.bind(app),
   },
   {
     label: "uuSync - Import manager",
-    icon: "fa-list",
+    icon: "list",
     action: app.showImportManager.bind(app),
   },
 ];
