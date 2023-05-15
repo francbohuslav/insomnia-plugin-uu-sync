@@ -135,12 +135,12 @@ export class ImportManager {
     );
   }
 
-  public async exportWorkspace(workspaceConfig: IStorage.IWorkspace) {
+  public async exportWorkspace(workspaceConfig: IStorage.IWorkspace, insomniaWorkspace?: Insomnia.IModelWorkspace) {
     const oneLineJson = await this.context.data.export.insomnia({
       includePrivate: false,
       format: "json",
       // Workspace parameter is not documented anymore, but still is used
-      workspace: {
+      workspace: insomniaWorkspace ?? {
         _id: workspaceConfig.data._id,
         created: workspaceConfig.data.created,
         description: workspaceConfig.data.description,
@@ -196,9 +196,22 @@ export class ImportManager {
     let workspace: InsomniaFile.IWorkspaceResource | undefined = json.resources?.filter((r) => InsomniaFile.isWorkspaceResource(r))[0] as any;
     const config = await this.storage.getConfig();
     this.checkWorkspaceUniqueness(config, workspace, filePath);
-    await this.context.data.import.raw(JSON.stringify(json), {
-      workspaceScope: "collection",
-    });
+    const contentToImport = JSON.stringify(json);
+    try {
+      await this.context.data.import.raw(contentToImport, {
+        workspaceId: workspace._id,
+        workspaceScope: "collection",
+      });
+    } catch (err: unknown) {
+      const exception = err as Error;
+      if (exception.message.includes("Could not find workspace with id")) {
+        await this.context.data.import.raw(contentToImport, {
+          workspaceScope: "collection",
+        });
+      } else {
+        throw err;
+      }
+    }
     config.workspaces[filePath] = {
       tabId,
       path: filePath,

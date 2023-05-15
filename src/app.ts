@@ -13,8 +13,11 @@ export default class App {
     if (!workspaceConfig) {
       return;
     }
+    //TODO: BF: nejak zajistit pro export z manageru. Tam to asi nepujde.
+    // Update id from given one. Id from import can differ!!
+    workspaceConfig.data._id = models.workspace._id;
     const importManager = new ImportManager(context);
-    await importManager.exportWorkspace(workspaceConfig);
+    await importManager.exportWorkspace(workspaceConfig, models.workspace);
   }
 
   public async importActualWorkspace(context: Insomnia.IContext, models: Insomnia.IModels) {

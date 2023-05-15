@@ -6,6 +6,9 @@ export default class FileNormalizer {
     content.__export_date = "2020-01-01T00:00:00.000Z";
     content.resources.forEach(this.setTimestamps);
     content.resources.sort(this.compareResources.bind(this));
+    // Existence of ApiSpec (api_spec) implicates that document is design. But we need collection, so delete them.
+    // Same problem should be also in few lines above in orignal insmnomnia workspace file... but I am lazy to do that :-)
+    content.resources = content.resources.filter((r) => r._type !== "api_spec");
     // Delete obsolete
     content.resources.forEach((resource) => {
       if (InsomniaFile.isRequestResource(resource) && resource.body.__uuSyncText) {
